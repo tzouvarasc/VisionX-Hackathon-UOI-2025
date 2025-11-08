@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PathMNIST – Πρόβλεψη</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-gradient"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="logo">
+        <path d="M12 2l3.5 6 6.5 1-4.7 4.6 1.1 6.4L12 17l-6 3.4 1.1-6.4L2.4 9l6.5-1L12 2z"></path>
+      </svg>
+      <span>PathMNIST – Πρόβλεψη</span>
+      <span class="badge">demo</span>
+    </div>
+    <button id="themeBtn" class="icon-btn" aria-label="Εναλλαγή θέματος">
+      <span class="sun">☀️</span><span class="moon">🌙</span>
+    </button>
+  </header>
+
+  <main class="container">
+    <section class="grid">
+      <!-- Upload / Preview -->
+      <div class="card">
+        <h2>Ανέβασε ακτινογραφία</h2>
+        <p class="muted">Drag & Drop, επικόλληση (Ctrl/⌘+V) ή «Επιλογή».</p>
+
+        <div id="dropzone" class="dropzone" tabindex="0" aria-label="Περιοχή μεταφοράς αρχείου">
+          <input id="fileInput" type="file" accept="image/*" hidden />
+          <div class="drop-inner">
+            <div class="drop-icon">⬆</div>
+            <div>
+              <button id="browseBtn" class="btn">Επιλογή εικόνας</button>
+              <span class="hint">ή σύρε εδώ</span>
+            </div>
+          </div>
+          <img id="preview" class="preview hidden" alt="Προεπισκόπηση εικόνας" />
+        </div>
+
+        <div class="actions">
+          <button id="predictBtn" class="btn primary" disabled>Πρόβλεψη</button>
+          <button id="clearBtn" class="btn ghost" disabled>Καθαρισμός</button>
+        </div>
+
+        <div id="progress" class="progress hidden" role="status" aria-live="polite">
+          <span class="spinner"></span> Γίνεται επεξεργασία…
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="card">
+        <h2>Αποτέλεσμα</h2>
+        <div id="result" class="result">
+          <div class="empty">Δεν έχει γίνει ακόμη πρόβλεψη.</div>
+        </div>
+        <details id="detailsBox" class="details hidden">
+          <summary>Πιθανότητες (top-3)</summary>
+          <div id="bars" class="bars"></div>
+        </details>
+        <p class="disclaimer">⚠️ Ερευνητική επίδειξη — όχι για κλινική χρήση.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>© 2025 – MedMNIST demo UI</span>
+  </footer>
+
+  <script>
+    // Αν το UI σερβίρεται από το ίδιο origin με το FastAPI:
+    //const API_URL = "/predict";
+    // Αν τρέχεις ξεχωριστό static server: 
+    const API_URL = "http://localhost:8080/predict";
+
+    const dropzone = document.getElementById("dropzone");
+    const fileInput = document.getElementById("fileInput");
+    const browseBtn = document.getElementById("browseBtn");
+    const predictBtn = document.getElementById("predictBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const preview = document.getElementById("preview");
+    const progress = document.getElementById("progress");
+    const result = document.getElementById("result");
+    const bars = document.getElementById("bars");
+    const detailsBox = document.getElementById("detailsBox");
+    const themeBtn = document.getElementById("themeBtn");
+
+    let currentFile = null;
+
+    // Theme toggle
+    const setTheme = (mode) => {
+      document.documentElement.dataset.theme = mode;
+      localStorage.setItem("ui-theme", mode);
+    };
+    themeBtn.addEventListener("click", () => {
+      const next = (document.documentElement.dataset.theme === "light") ? "dark" : "light";
+      setTheme(next);
+    });
+    setTheme(localStorage.getItem("ui-theme") || "dark");
+
+    // Helpers
+    function enableActions(enabled) {
+      predictBtn.disabled = !enabled;
+      clearBtn.disabled = !enabled;
+    }
+    function resetUI() {
+      currentFile = null;
+      preview.src = "";
+      preview.classList.add("hidden");
+      dropzone.classList.remove("has-image");
+      result.innerHTML = `<div class="empty">Δεν έχει γίνει ακόμη πρόβλεψη.</div>`;
+      bars.innerHTML = "";
+      detailsBox.classList.add("hidden");
+      enableActions(false);
+    }
+    function setPreview(file) {
+      const url = URL.createObjectURL(file);
+      preview.src = url;
+      preview.onload = () => URL.revokeObjectURL(url);
+      preview.classList.remove("hidden");
+      dropzone.classList.add("has-image");
+      enableActions(true);
+    }
+    function pickFile(file) {
+      if (!file || !file.type.startsWith("image/")) {
+        alert("Παρακαλώ διάλεξε αρχείο εικόνας.");
+        return;
+      }
+      currentFile = file;
+      setPreview(file);
+    }
+
+    // Drag & Drop
+    ["dragenter","dragover"].forEach(ev =>
+      dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add("drag"); })
+    );
+    ["dragleave","drop"].forEach(ev =>
+      dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove("drag"); })
+    );
+    dropzone.addEventListener("drop", (e) => {
+      const file = e.dataTransfer.files?.[0];
+      pickFile(file);
+    });
+
+    // Click / Browse
+    browseBtn.addEventListener("click", () => fileInput.click());
+    dropzone.addEventListener("click", (e) => {
+      if (!dropzone.classList.contains("has-image")) fileInput.click();
+    });
+    fileInput.addEventListener("change", (e) => pickFile(e.target.files?.[0]));
+
+    // Paste (Ctrl/⌘+V)
+    window.addEventListener("paste", (e) => {
+      const file = Array.from(e.clipboardData.files || [])[0];
+      if (file) pickFile(file);
+    });
+
+    // Clear
+    clearBtn.addEventListener("click", resetUI);
+
+    // Predict
+    predictBtn.addEventListener("click", async () => {
+      if (!currentFile) return;
+      progress.classList.remove("hidden");
+      result.innerHTML = "";
+      bars.innerHTML = "";
+      detailsBox.classList.add("hidden");
+
+      const form = new FormData();
+      form.append("file", currentFile);
+
+      try {
+        const resp = await fetch(API_URL, { method: "POST", body: form });
+        if (!resp.ok) {
+          const err = await resp.json().catch(()=>({detail:"Σφάλμα server"}));
+          throw new Error(err.detail || "Σφάλμα server");
+        }
+        const data = await resp.json();
+
+        // Κύριο κείμενο
+        const label = Array.isArray(data.pred_class) ? data.pred_class.join(", ") : data.pred_class;
+        result.innerHTML = `
+          <div class="pred">
+            <div class="pred-label">${label ?? "—"}</div>
+          </div>
+        `;
+
+        // Top-3 bars (αν υπάρχουν probs)
+        if (data.probs && typeof data.probs === "object") {
+          const entries = Object.entries(data.probs);
+          entries.sort((a,b) => b[1] - a[1]);
+          const top = entries.slice(0, Math.min(3, entries.length));
+          top.forEach(([name, p]) => {
+            const pct = (p * 100).toFixed(1);
+            const row = document.createElement("div");
+            row.className = "bar-row";
+            row.innerHTML = `
+              <div class="bar-label">${name}</div>
+              <div class="bar">
+                <div class="bar-fill" style="width:${pct}%"></div>
+              </div>
+              <div class="bar-val">${pct}%</div>
+            `;
+            bars.appendChild(row);
+          });
+          detailsBox.classList.remove("hidden");
+        }
+      } catch (e) {
+        result.innerHTML = `<div class="error">❌ ${e.message || e}</div>`;
+      } finally {
+        progress.classList.add("hidden");
+      }
+    });
+
+    // Init
+    resetUI();
+  </script>
+</body>
+</html>
