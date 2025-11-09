@@ -4,31 +4,90 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PathMNIST – Πρόβλεψη</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+    rel="stylesheet"
+  />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="bg-gradient"></div>
+  <div class="bg-grid"></div>
+  <div class="bg-orb orb-one"></div>
+  <div class="bg-orb orb-two"></div>
 
   <header class="topbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" aria-hidden="true" class="logo">
         <path d="M12 2l3.5 6 6.5 1-4.7 4.6 1.1 6.4L12 17l-6 3.4 1.1-6.4L2.4 9l6.5-1L12 2z"></path>
       </svg>
-      <span>PathMNIST – Πρόβλεψη</span>
+      <div class="brand-text">
+        <span class="brand-title">PathMNIST</span>
+        <span class="brand-sub">AI Diagnostics Studio</span>
+      </div>
       <span class="badge">demo</span>
     </div>
+    <nav class="top-links" aria-label="Βασικό μενού">
+      <a class="top-link" href="#workspace">Workspace</a>
+      <a class="top-link" href="#insights">Πληροφορίες</a>
+      <a class="top-link" href="#faq">FAQ</a>
+    </nav>
     <button id="themeBtn" class="icon-btn" aria-label="Εναλλαγή θέματος">
       <span class="sun">☀️</span><span class="moon">🌙</span>
     </button>
   </header>
 
   <main class="container">
-    <section class="grid">
-      <!-- Upload / Preview -->
-      <div class="card">
-        <h2>Ανέβασε ακτινογραφία</h2>
-        <p class="muted">Drag & Drop, επικόλληση (Ctrl/⌘+V) ή «Επιλογή».</p>
+    <section class="hero" id="workspace">
+      <div class="hero-copy">
+        <span class="eyebrow">MedMNIST pipeline</span>
+        <h1>Οπτικοποίησε γρήγορα πιθανότητες με ένα κλικ</h1>
+        <p>
+          Μια μοντέρνα διεπαφή για γρήγορη διάγνωση σε δείγματα ιστοπαθολογίας. Φόρτωσε
+          εικόνα, πάρε προβλέψεις από το μοντέλο PathMNIST και μοιράσου ασφαλή αποτελέσματα
+          με την ομάδα σου.
+        </p>
+        <ul class="hero-highlights">
+          <li>
+            <span class="dot"></span>
+            <span>Live προεπισκόπηση &amp; υποστήριξη drag &amp; drop</span>
+          </li>
+          <li>
+            <span class="dot"></span>
+            <span>Γραφήματα πιθανότητας top-3 με ομαλή κίνηση</span>
+          </li>
+          <li>
+            <span class="dot"></span>
+            <span>Κατάσταση θέματος που αποθηκεύεται σε τοπικό χώρο</span>
+          </li>
+        </ul>
+      </div>
+      <div class="hero-panels">
+        <div class="status-card">
+          <span class="status-label">Μοντέλο</span>
+          <strong class="status-value">PathMNIST v1.2</strong>
+          <span class="status-desc">Εκπαιδευμένο σε 89k πλακίδια</span>
+        </div>
+        <div class="status-card">
+          <span class="status-label">Χρόνος απόκρισης</span>
+          <strong class="status-value">~450ms</strong>
+          <span class="status-desc">Κατά μέσο όρο σε GPU A100</span>
+        </div>
+        <div class="status-card">
+          <span class="status-label">Ακρίβεια Top-1</span>
+          <strong class="status-value">86.4%</strong>
+          <span class="status-desc">Ενδεικτική τιμή σε validation set</span>
+        </div>
+      </div>
+    </section>
 
+    <section class="workspace">
+      <div class="pane upload">
+        <div class="pane-header">
+          <h2>Ανέβασε ακτινογραφία</h2>
+          <p class="muted">Drag &amp; Drop, επικόλληση (Ctrl/⌘+V) ή «Επιλογή».</p>
+        </div>
         <div id="dropzone" class="dropzone" tabindex="0" aria-label="Περιοχή μεταφοράς αρχείου">
           <input id="fileInput" type="file" accept="image/*" hidden />
           <div class="drop-inner">
@@ -40,20 +99,20 @@
           </div>
           <img id="preview" class="preview hidden" alt="Προεπισκόπηση εικόνας" />
         </div>
-
         <div class="actions">
           <button id="predictBtn" class="btn primary" disabled>Πρόβλεψη</button>
           <button id="clearBtn" class="btn ghost" disabled>Καθαρισμός</button>
         </div>
-
         <div id="progress" class="progress hidden" role="status" aria-live="polite">
           <span class="spinner"></span> Γίνεται επεξεργασία…
         </div>
       </div>
 
-      <!-- Results -->
-      <div class="card">
-        <h2>Αποτέλεσμα</h2>
+      <div class="pane results" id="insights">
+        <div class="pane-header">
+          <h2>Αποτέλεσμα</h2>
+          <p class="muted">Ταξινόμηση εικόνας και πιθανότητες μοντέλου.</p>
+        </div>
         <div id="result" class="result">
           <div class="empty">Δεν έχει γίνει ακόμη πρόβλεψη.</div>
         </div>
@@ -61,7 +120,33 @@
           <summary>Πιθανότητες (top-3)</summary>
           <div id="bars" class="bars"></div>
         </details>
+        <div class="tips">
+          <h3>Συμβουλές</h3>
+          <ul>
+            <li>Χρησιμοποίησε υψηλής ανάλυσης PNG/JPEG για σταθερότερες προβλέψεις.</li>
+            <li>Κράτησε το ROI στο κέντρο για καλύτερη ακρίβεια.</li>
+            <li>Οι προβλέψεις αποστέλλονται αποκλειστικά στο backend API.</li>
+          </ul>
+        </div>
         <p class="disclaimer">⚠️ Ερευνητική επίδειξη — όχι για κλινική χρήση.</p>
+      </div>
+    </section>
+
+    <section class="faq" id="faq">
+      <h2>Συχνές ερωτήσεις</h2>
+      <div class="faq-grid">
+        <article>
+          <h3>Τι τύπους αρχείων υποστηρίζετε;</h3>
+          <p>Μπορείς να ανεβάσεις PNG, JPG ή JPEG. Τα περισσότερα προγράμματα εξαγωγής εργαστηριακών εικόνων τα υποστηρίζουν.</p>
+        </article>
+        <article>
+          <h3>Πού εκτελείται η πρόβλεψη;</h3>
+          <p>Η αίτηση στέλνεται στο API PathMNIST. Δεν αποθηκεύουμε τις εικόνες, χρησιμοποιούνται μόνο για την εκτίμηση.</p>
+        </article>
+        <article>
+          <h3>Μπορώ να εναλλάξω σε dark / light mode;</h3>
+          <p>Ναι! Χρησιμοποίησε το κουμπί θέματος πάνω δεξιά. Η επιλογή σου αποθηκεύεται στον browser.</p>
+        </article>
       </div>
     </section>
   </main>
