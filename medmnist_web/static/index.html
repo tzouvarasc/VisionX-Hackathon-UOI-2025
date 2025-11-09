@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PathMNIST – Πρόβλεψη</title>
+  <title>Hackthon-UOI-2025</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -23,14 +23,14 @@
         <path d="M12 2l3.5 6 6.5 1-4.7 4.6 1.1 6.4L12 17l-6 3.4 1.1-6.4L2.4 9l6.5-1L12 2z"></path>
       </svg>
       <div class="brand-text">
-        <span class="brand-title">PathMNIST</span>
+        <span class="brand-title">Hackathon UOI 2025</span>
         <span class="brand-sub">AI Diagnostics Studio</span>
       </div>
       <span class="badge">demo</span>
     </div>
     <nav class="top-links" aria-label="Βασικό μενού">
       <a class="top-link" href="#workspace">Workspace</a>
-      <a class="top-link" href="#insights">Πληροφορίες</a>
+      <a class="top-link" href="#insights">Info</a>
       <a class="top-link" href="#faq">FAQ</a>
     </nav>
     <button id="themeBtn" class="icon-btn" aria-label="Εναλλαγή θέματος">
@@ -41,43 +41,32 @@
   <main class="container">
     <section class="hero" id="workspace">
       <div class="hero-copy">
-        <span class="eyebrow">MedMNIST pipeline</span>
-        <h1>Οπτικοποίησε γρήγορα πιθανότητες με ένα κλικ</h1>
+        <span class="eyebrow">404: Disease Not Found</span>
+        <h1>Quickly visualize probabilities with one click</h1>
         <p>
-          Μια μοντέρνα διεπαφή για γρήγορη διάγνωση σε δείγματα ιστοπαθολογίας. Φόρτωσε
-          εικόνα, πάρε προβλέψεις από το μοντέλο PathMNIST και μοιράσου ασφαλή αποτελέσματα
-          με την ομάδα σου.
+          A modern interface for rapid diagnosis of histopathology samples. Upload an image, get predictions from the PathMNIST model, and share secure results with your team.
         </p>
         <ul class="hero-highlights">
           <li>
             <span class="dot"></span>
-            <span>Live προεπισκόπηση &amp; υποστήριξη drag &amp; drop</span>
+            <span>Live preview </span>
           </li>
           <li>
             <span class="dot"></span>
-            <span>Γραφήματα πιθανότητας top-3 με ομαλή κίνηση</span>
-          </li>
-          <li>
-            <span class="dot"></span>
-            <span>Κατάσταση θέματος που αποθηκεύεται σε τοπικό χώρο</span>
+            <span>Top-3 probability graphs</span>
           </li>
         </ul>
       </div>
       <div class="hero-panels">
         <div class="status-card">
-          <span class="status-label">Μοντέλο</span>
-          <strong class="status-value">PathMNIST v1.2</strong>
-          <span class="status-desc">Εκπαιδευμένο σε 89k πλακίδια</span>
+          <span class="status-label">Dataset</span>
+          <strong class="status-value">PathMNIST v3.2</strong>
+          <span class="status-desc">Trained on 89k samples</span>
         </div>
         <div class="status-card">
-          <span class="status-label">Χρόνος απόκρισης</span>
-          <strong class="status-value">~450ms</strong>
-          <span class="status-desc">Κατά μέσο όρο σε GPU A100</span>
-        </div>
-        <div class="status-card">
-          <span class="status-label">Ακρίβεια Top-1</span>
-          <strong class="status-value">86.4%</strong>
-          <span class="status-desc">Ενδεικτική τιμή σε validation set</span>
+          <span class="status-label">Accuracy Top-1</span>
+          <strong class="status-value">94.4%</strong>
+          <span class="status-desc">Based on validation set</span>
         </div>
       </div>
     </section>
@@ -85,50 +74,49 @@
     <section class="workspace">
       <div class="pane upload">
         <div class="pane-header">
-          <h2>Ανέβασε ακτινογραφία</h2>
-          <p class="muted">Drag &amp; Drop, επικόλληση (Ctrl/⌘+V) ή «Επιλογή».</p>
+          <h2>Upload X-ray</h2>
+          <p class="muted">Drag &amp; Drop, paste (Ctrl/⌘+V) or «select».</p>
         </div>
         <div id="dropzone" class="dropzone" tabindex="0" aria-label="Περιοχή μεταφοράς αρχείου">
           <input id="fileInput" type="file" accept="image/*" hidden />
           <div class="drop-inner">
             <div class="drop-icon">⬆</div>
             <div>
-              <button id="browseBtn" class="btn">Επιλογή εικόνας</button>
-              <span class="hint">ή σύρε εδώ</span>
+              <button id="browseBtn" class="btn">Select Image</button>
+              <span class="hint">or drag here</span>
             </div>
           </div>
           <img id="preview" class="preview hidden" alt="Προεπισκόπηση εικόνας" />
         </div>
         <div class="actions">
-          <button id="predictBtn" class="btn primary" disabled>Πρόβλεψη</button>
-          <button id="clearBtn" class="btn ghost" disabled>Καθαρισμός</button>
+          <button id="predictBtn" class="btn primary" disabled>Predict</button>
+          <button id="clearBtn" class="btn ghost" disabled>Clear</button>
         </div>
         <div id="progress" class="progress hidden" role="status" aria-live="polite">
-          <span class="spinner"></span> Γίνεται επεξεργασία…
+          <span class="spinner"></span> Processing...
         </div>
       </div>
 
       <div class="pane results" id="insights">
         <div class="pane-header">
-          <h2>Αποτέλεσμα</h2>
-          <p class="muted">Ταξινόμηση εικόνας και πιθανότητες μοντέλου.</p>
+          <h2>Results</h2>
+          <p class="muted">Image classification and model probabilities. image and model probabilities.</p>
         </div>
         <div id="result" class="result">
-          <div class="empty">Δεν έχει γίνει ακόμη πρόβλεψη.</div>
+          <div class="empty">No prediction has been made yet.</div>
         </div>
         <details id="detailsBox" class="details hidden">
-          <summary>Πιθανότητες (top-3)</summary>
+          <summary>Probabilities (top-3)</summary>
           <div id="bars" class="bars"></div>
         </details>
         <div class="tips">
           <h3>Συμβουλές</h3>
           <ul>
-            <li>Χρησιμοποίησε υψηλής ανάλυσης PNG/JPEG για σταθερότερες προβλέψεις.</li>
-            <li>Κράτησε το ROI στο κέντρο για καλύτερη ακρίβεια.</li>
-            <li>Οι προβλέψεις αποστέλλονται αποκλειστικά στο backend API.</li>
+            <li>Use PNG images.</li>
+            <li>Predictions are sent exclusively to the backend API.</li>
           </ul>
         </div>
-        <p class="disclaimer">⚠️ Ερευνητική επίδειξη — όχι για κλινική χρήση.</p>
+        <p class="disclaimer">⚠️ Research demonstration — not for clinical use.</p>
       </div>
     </section>
 
@@ -136,23 +124,19 @@
       <h2>Συχνές ερωτήσεις</h2>
       <div class="faq-grid">
         <article>
-          <h3>Τι τύπους αρχείων υποστηρίζετε;</h3>
-          <p>Μπορείς να ανεβάσεις PNG, JPG ή JPEG. Τα περισσότερα προγράμματα εξαγωγής εργαστηριακών εικόνων τα υποστηρίζουν.</p>
+          <h3>Where is the forecast performed?</h3>
+          <p>The request is sent to the PathMNIST API. We do not store the images, they are only used for estimation.</p>
         </article>
         <article>
-          <h3>Πού εκτελείται η πρόβλεψη;</h3>
-          <p>Η αίτηση στέλνεται στο API PathMNIST. Δεν αποθηκεύουμε τις εικόνες, χρησιμοποιούνται μόνο για την εκτίμηση.</p>
-        </article>
-        <article>
-          <h3>Μπορώ να εναλλάξω σε dark / light mode;</h3>
-          <p>Ναι! Χρησιμοποίησε το κουμπί θέματος πάνω δεξιά. Η επιλογή σου αποθηκεύεται στον browser.</p>
+          <h3>Can I switch to dark / light mode?</h3>
+          <p>Yes! Use the topic button on the top right. Your choice is saved in the browser.</p>
         </article>
       </div>
     </section>
   </main>
 
   <footer class="footer">
-    <span>© 2025 – MedMNIST demo UI</span>
+    <span>© 2025 – Hackathon UOI demo</span>
   </footer>
 
   <script>
