@@ -4,3 +4,6 @@ fastapi
 uvicorn
 pillow
 python-multipart
+numpy
+torchxrayvision
+scikit-image
