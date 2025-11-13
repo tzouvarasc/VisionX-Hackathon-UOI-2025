@@ -13,44 +13,26 @@ from torchvision.transforms.functional import InterpolationMode
 IMG_SIZE = 224
 DEFAULT_CLASS_NAMES: List[str] = [
     "Atelectasis",
+    "Cardiomegaly",
     "Consolidation",
-    "Infiltration",
-    "Pneumothorax",
     "Edema",
+    "Effusion",
     "Emphysema",
     "Fibrosis",
-    "Effusion",
-    "Pneumonia",
-    "Pleural_Thickening",
-    "Cardiomegaly",
-    "Nodule",
-    "Mass",
     "Hernia",
-    "Lung_Lesion",
+    "Infiltration",
+    "Mass",
+    "Nodule",
+    "Pleural_Thickening",
+    "Pneumonia",
+    "Pneumothorax",
     "Fracture",
+    "Lung_Lesion",
     "Lung_Opacity",
-    "Enlarged_Cardiomediastinum",
+    "Pleural_Other",
 ]
-_DISPLAY_NAME_OVERRIDES = {
-    "effusion": "Pleural Effusion",
-    "pleural effusion": "Pleural Effusion",
-    "pleural thickening": "Pleural Thickening",
-    "lung opacity": "Lung Opacity",
-    "lung lesion": "Lung Lesion",
-    "enlarged cardiomediastinum": "Enlarged Cardiomediastinum",
-}
-
-
-def _format_display_name(raw: str) -> str:
-    clean = str(raw or "").replace("_", " ").strip()
-    if not clean:
-        return ""
-    key = clean.lower()
-    return _DISPLAY_NAME_OVERRIDES.get(key, clean)
-
-
 CLASS_NAMES: List[str] = DEFAULT_CLASS_NAMES.copy()
-DISPLAY_NAMES: List[str] = [_format_display_name(name) for name in CLASS_NAMES]
+DISPLAY_NAMES: List[str] = [name.replace("_", " ") for name in CLASS_NAMES]
 
 _RESIZE = transforms.Resize((IMG_SIZE, IMG_SIZE), interpolation=InterpolationMode.BICUBIC)
 _TO_TENSOR = transforms.ToTensor()
@@ -63,31 +45,8 @@ def set_class_names(names: Iterable[str]) -> None:
     normalized = list(names)
     if not normalized:
         normalized = DEFAULT_CLASS_NAMES.copy()
-    cleaned: List[str] = []
-    for idx, raw in enumerate(normalized):
-        text = str(raw or "").strip()
-        if not text:
-            if idx < len(DEFAULT_CLASS_NAMES):
-                text = DEFAULT_CLASS_NAMES[idx]
-            else:
-                text = f"Finding {idx + 1}"
-        cleaned.append(text)
-    if len(cleaned) < len(DEFAULT_CLASS_NAMES):
-        cleaned.extend(DEFAULT_CLASS_NAMES[len(cleaned):])
-    CLASS_NAMES = cleaned
-    DISPLAY_NAMES = [_format_display_name(name) or f"Finding {idx + 1}" for idx, name in enumerate(CLASS_NAMES)]
-
-
-def _label_for_index(idx: int) -> str:
-    if idx < len(DISPLAY_NAMES):
-        label = DISPLAY_NAMES[idx]
-    else:
-        label = ""
-    if label:
-        return label
-    if idx < len(DEFAULT_CLASS_NAMES):
-        return _format_display_name(DEFAULT_CLASS_NAMES[idx]) or f"Finding {idx + 1}"
-    return f"Finding {idx + 1}"
+    CLASS_NAMES = normalized
+    DISPLAY_NAMES = [name.replace("_", " ") for name in CLASS_NAMES]
 
 
 def get_display_names() -> List[str]:
@@ -130,17 +89,10 @@ def logits_to_output(logits: torch.Tensor, threshold: float = 0.5) -> Dict[str, 
     activated = [i for i, p in enumerate(probs_np) if p >= threshold]
     if not activated:
         activated = [int(sorted_idxs[0])]
-    labels: List[str] = []
-    for idx in activated:
-        label = _label_for_index(idx)
-        if label:
-            labels.append(label)
-    if not labels:
-        first_idx = int(sorted_idxs[0])
-        labels = [_label_for_index(first_idx)]
+    labels = [DISPLAY_NAMES[i] for i in activated]
     return {
         "pred_class": labels,
-        "probs": {_label_for_index(i): float(probs_np[i]) for i in range(len(probs_np))},
+        "probs": {DISPLAY_NAMES[i]: float(probs_np[i]) for i in range(len(probs_np))},
         "top_indices": [int(i) for i in sorted_idxs[:3]],
     }
 
