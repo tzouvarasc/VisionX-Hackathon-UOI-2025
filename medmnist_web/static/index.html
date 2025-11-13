@@ -41,10 +41,10 @@
   <main class="container">
     <section class="hero" id="workspace">
       <div class="hero-copy">
-        <span class="eyebrow">404: Disease Not Found</span>
-        <h1>Quickly visualize probabilities with one click</h1>
+        <span class="eyebrow">AI Radiology Companion</span>
+        <h1>Inspect chest X-rays with ready-to-use CheX DenseNet</h1>
         <p>
-          A modern interface for rapid diagnosis of histopathology samples. Upload an image, get predictions from the PathMNIST model, and share secure results with your team.
+          Upload a radiograph, receive multi-label findings, and explore Grad-CAM visual explanations – all powered by the pretrained TorchXRayVision DenseNet.
         </p>
         <ul class="hero-highlights">
           <li>
@@ -59,14 +59,14 @@
       </div>
       <div class="hero-panels">
         <div class="status-card">
-          <span class="status-label">Dataset</span>
-          <strong class="status-value">PathMNIST v3.2</strong>
-          <span class="status-desc">Trained on 89k samples</span>
+          <span class="status-label">Model</span>
+          <strong class="status-value">DenseNet121</strong>
+          <span class="status-desc">TorchXRayVision weights</span>
         </div>
         <div class="status-card">
-          <span class="status-label">Accuracy Top-1</span>
-          <strong class="status-value">94.4%</strong>
-          <span class="status-desc">Based on validation set</span>
+          <span class="status-label">Coverage</span>
+          <strong class="status-value">18 findings</strong>
+          <span class="status-desc">CheXpert label space</span>
         </div>
       </div>
     </section>
@@ -75,7 +75,7 @@
       <div class="pane upload">
         <div class="pane-header">
           <h2>Upload X-ray</h2>
-          <p class="muted">Drag &amp; Drop, paste (Ctrl/⌘+V) or «select».</p>
+          <p class="muted">Drag &amp; drop, paste (Ctrl/⌘+V) or «select» a chest radiograph.</p>
         </div>
         <div id="dropzone" class="dropzone" tabindex="0" aria-label="Περιοχή μεταφοράς αρχείου">
           <input id="fileInput" type="file" accept="image/*" hidden />
@@ -100,7 +100,7 @@
       <div class="pane results" id="insights">
         <div class="pane-header">
           <h2>Results</h2>
-          <p class="muted">Image classification and model probabilities.</p>
+          <p class="muted">Multi-label findings and Grad-CAM focus maps.</p>
         </div>
         <div id="result" class="result">
           <div class="empty">No prediction has been made yet.</div>
@@ -109,11 +109,33 @@
           <summary>Probabilities (top-3)</summary>
           <div id="bars" class="bars"></div>
         </details>
+        <div id="gradcamViewer" class="cam-viewer hidden" aria-live="polite">
+          <div class="cam-header">
+            <div>
+              <h3>Grad-CAM Focus</h3>
+              <p id="gradcamTarget" class="muted"></p>
+            </div>
+            <button id="toggleCam" class="icon-btn cam-toggle" type="button" aria-pressed="true" aria-label="Toggle Grad-CAM visibility">
+              <span class="cam-on">👁️</span>
+              <span class="cam-off">🚫</span>
+            </button>
+          </div>
+          <div class="cam-grid" id="camGrid">
+            <figure class="cam-card">
+              <figcaption>Overlay</figcaption>
+              <img id="gradcamOverlay" alt="Grad-CAM overlay" />
+            </figure>
+            <figure class="cam-card">
+              <figcaption>Heatmap</figcaption>
+              <img id="gradcamHeatmap" alt="Grad-CAM heatmap" />
+            </figure>
+          </div>
+        </div>
         <div class="tips">
           <h3>Tips</h3>
           <ul>
-            <li>Use PNG images.</li>
-            <li>Predictions are sent exclusively to the backend API.</li>
+            <li>Use PNG or high-resolution JPEG radiographs.</li>
+            <li>The Grad-CAM overlay is resized to 224×224px for visualization.</li>
           </ul>
         </div>
         <p class="disclaimer">⚠️ Research demonstration — not for clinical use.</p>
@@ -124,8 +146,8 @@
       <h2>Frequently Asked Questions</h2>
       <div class="faq-grid">
         <article>
-          <h3>Where is the forecast performed?</h3>
-          <p>The request is sent to the PathMNIST API. We do not store the images, they are only used for estimation.</p>
+          <h3>Where is the inference performed?</h3>
+          <p>The request is sent to the FastAPI backend hosting the TorchXRayVision DenseNet. No images are stored.</p>
         </article>
         <article>
           <h3>Can I switch to dark / light mode?</h3>
@@ -155,6 +177,12 @@
     const result = document.getElementById("result");
     const bars = document.getElementById("bars");
     const detailsBox = document.getElementById("detailsBox");
+    const gradcamViewer = document.getElementById("gradcamViewer");
+    const gradcamOverlay = document.getElementById("gradcamOverlay");
+    const gradcamHeatmap = document.getElementById("gradcamHeatmap");
+    const gradcamTarget = document.getElementById("gradcamTarget");
+    const toggleCam = document.getElementById("toggleCam");
+    const camGrid = document.getElementById("camGrid");
     const themeBtn = document.getElementById("themeBtn");
 
     let currentFile = null;
@@ -183,6 +211,12 @@
       result.innerHTML = `<div class="empty">Δεν έχει γίνει ακόμη πρόβλεψη.</div>`;
       bars.innerHTML = "";
       detailsBox.classList.add("hidden");
+      gradcamViewer.classList.add("hidden");
+      gradcamOverlay.src = "";
+      gradcamHeatmap.src = "";
+      gradcamTarget.textContent = "";
+      camGrid.classList.remove("hidden");
+      toggleCam?.setAttribute("aria-pressed", "true");
       enableActions(false);
     }
     function setPreview(file) {
@@ -230,6 +264,14 @@
     // Clear
     clearBtn.addEventListener("click", resetUI);
 
+    // Toggle Grad-CAM visibility
+    if (toggleCam && camGrid) {
+      toggleCam.addEventListener("click", () => {
+        const hidden = camGrid.classList.toggle("hidden");
+        toggleCam.setAttribute("aria-pressed", (!hidden).toString());
+      });
+    }
+
     // Predict
     predictBtn.addEventListener("click", async () => {
       if (!currentFile) return;
@@ -237,6 +279,10 @@
       result.innerHTML = "";
       bars.innerHTML = "";
       detailsBox.classList.add("hidden");
+      gradcamViewer.classList.add("hidden");
+      gradcamOverlay.src = "";
+      gradcamHeatmap.src = "";
+      gradcamTarget.textContent = "";
 
       const form = new FormData();
       form.append("file", currentFile);
@@ -277,8 +323,18 @@
           });
           detailsBox.classList.remove("hidden");
         }
+
+        if (data.gradcam_overlay && data.gradcam_heatmap) {
+          gradcamOverlay.src = `data:image/png;base64,${data.gradcam_overlay}`;
+          gradcamHeatmap.src = `data:image/png;base64,${data.gradcam_heatmap}`;
+          gradcamTarget.textContent = data.gradcam_target ? `Highlighted class: ${data.gradcam_target}` : "";
+          gradcamViewer.classList.remove("hidden");
+          camGrid.classList.remove("hidden");
+          toggleCam?.setAttribute("aria-pressed", "true");
+        }
       } catch (e) {
         result.innerHTML = `<div class="error">❌ ${e.message || e}</div>`;
+        gradcamViewer.classList.add("hidden");
       } finally {
         progress.classList.add("hidden");
       }
