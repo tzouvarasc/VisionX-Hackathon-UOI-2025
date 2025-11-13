@@ -1,10 +1,14 @@
 # utils.py
+import base64
+import io
 import json
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
 import torch
+from PIL import Image, ImageOps
 from torchvision import transforms
-from PIL import Image
 
 MODELS_DIR = Path(__file__).parent / "models"
 
@@ -40,6 +44,96 @@ def pil_to_tensor(img: Image.Image, device: str):
         img = img.convert("RGB")
     x = build_preprocess()(img).unsqueeze(0).to(device)  # (1, C, H, W)
     return x
+
+
+def image_to_base64(img: Image.Image) -> str:
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+
+def _register_backward_hook(module, hook):
+    if hasattr(module, "register_full_backward_hook"):
+        return module.register_full_backward_hook(hook)
+    return module.register_backward_hook(lambda m, grad_in, grad_out: hook(m, grad_in, grad_out))
+
+
+def compute_grad_cam(
+    model: torch.nn.Module,
+    input_tensor: torch.Tensor,
+    target_layer: torch.nn.Module,
+    target_index: Optional[int] = None,
+) -> Tuple[torch.Tensor, Optional[np.ndarray]]:
+    activations: List[torch.Tensor] = []
+    gradients: List[torch.Tensor] = []
+
+    def forward_hook(module, _inp, output):
+        activations.append(output.detach())
+
+    def backward_hook(module, _grad_input, grad_output):
+        gradients.append(grad_output[0].detach())
+
+    handle_fwd = target_layer.register_forward_hook(forward_hook)
+    handle_bwd = _register_backward_hook(target_layer, backward_hook)
+
+    input_tensor = input_tensor.requires_grad_(True)
+    logits = model(input_tensor)
+
+    if target_index is None:
+        if TASK.startswith("multi-label"):
+            probs = torch.sigmoid(logits)[0]
+            target_index = int(torch.argmax(probs).item())
+        else:
+            target_index = int(torch.argmax(logits, dim=1).item())
+
+    model.zero_grad(set_to_none=True)
+    score = logits[:, target_index]
+    score.backward()
+
+    handle_fwd.remove()
+    handle_bwd.remove()
+
+    if not activations or not gradients:
+        return logits.detach(), None
+
+    grad = gradients[0]
+    act = activations[0]
+
+    weights = grad.mean(dim=(2, 3), keepdim=True)
+    cam = torch.relu((weights * act).sum(dim=1, keepdim=True))
+    cam = torch.nn.functional.interpolate(
+        cam,
+        size=(IMG_SIZE, IMG_SIZE),
+        mode="bilinear",
+        align_corners=False,
+    )
+    cam = cam.squeeze().cpu()
+    cam = cam - cam.min()
+    cam = cam / (cam.max() + 1e-8)
+    return logits.detach(), cam.numpy()
+
+
+def build_heatmap_overlay(base_image: Image.Image, heatmap: np.ndarray, alpha: float = 0.45) -> Image.Image:
+    resized = base_image.convert("RGB").resize((IMG_SIZE, IMG_SIZE))
+    heat = Image.fromarray(np.uint8(heatmap * 255), mode="L")
+    heat = heat.resize(resized.size, resample=Image.BILINEAR)
+    colorized = ImageOps.colorize(heat, black="#0b1f3a", white="#f97316")
+    overlay = Image.blend(resized, colorized, alpha)
+    return overlay
+
+
+def gradcam_to_base64(
+    model: torch.nn.Module,
+    input_tensor: torch.Tensor,
+    target_layer: torch.nn.Module,
+    original_image: Image.Image,
+    target_index: Optional[int] = None,
+) -> Tuple[torch.Tensor, Optional[str]]:
+    logits, heatmap = compute_grad_cam(model, input_tensor, target_layer, target_index)
+    if heatmap is None:
+        return logits, None
+    overlay = build_heatmap_overlay(original_image, heatmap)
+    return logits, image_to_base64(overlay)
 
 @torch.no_grad()
 def logits_to_output(logits: torch.Tensor) -> Dict[str, Any]:

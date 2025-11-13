@@ -1,27 +1,32 @@
 {
-  "dataset": "pathmnist",
-  "task": "multi-class",
-  "img_size": 28,
+  "dataset": "chexpert",
+  "task": "multi-label-binary",
+  "img_size": 320,
   "n_channels": 3,
   "mean": [
-    0.5,
-    0.5,
-    0.5
+    0.5330,
+    0.5330,
+    0.5330
   ],
   "std": [
-    0.5,
-    0.5,
-    0.5
+    0.0349,
+    0.0349,
+    0.0349
   ],
   "class_names": [
-    "adipose",
-    "background",
-    "debris",
-    "lymphocytes",
-    "mucus",
-    "smooth muscle",
-    "normal colon mucosa",
-    "cancer-associated stroma",
-    "colorectal adenocarcinoma epithelium"
+    "Atelectasis",
+    "Cardiomegaly",
+    "Consolidation",
+    "Edema",
+    "Enlarged Cardiomediastinum",
+    "Fracture",
+    "Lung Lesion",
+    "Lung Opacity",
+    "No Finding",
+    "Pleural Effusion",
+    "Pleural Other",
+    "Pneumonia",
+    "Pneumothorax",
+    "Support Devices"
   ]
 }
