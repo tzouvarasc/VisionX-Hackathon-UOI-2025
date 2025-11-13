@@ -17,6 +17,16 @@ uvicorn app_fastapi:app --host 0.0.0.0 --port 8080 --reload
 
 > Αν προτιμάς να μείνεις στον ριζικό φάκελο του repo, τρέξε `uvicorn medmnist_web.app_fastapi:app --host 0.0.0.0 --port 8080 --reload`. Σε κάθε περίπτωση βεβαιώσου ότι το working directory περιέχει τον φάκελο `medmnist_web`, αλλιώς η Python δεν μπορεί να εντοπίσει το πακέτο.
 
+```bash
+pip install -r medmnist_web/requirements.txt
+```
+
+## Run the FastAPI backend
+
+```bash
+uvicorn medmnist_web.app_fastapi:app --host 0.0.0.0 --port 8080 --reload
+```
+
 ## Serve the UI
 
 ```bash

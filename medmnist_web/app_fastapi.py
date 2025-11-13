@@ -7,28 +7,16 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 
-if __package__:
-    from .utils import (
-        GradCAM,
-        get_device,
-        get_display_names,
-        logits_to_output,
-        pil_to_tensor,
-        render_gradcam_overlay,
-        resolve_densenet_target_layer,
-        set_class_names,
-    )
-else:  # pragma: no cover - executed when running as a top-level module
-    from utils import (
-        GradCAM,
-        get_device,
-        get_display_names,
-        logits_to_output,
-        pil_to_tensor,
-        render_gradcam_overlay,
-        resolve_densenet_target_layer,
-        set_class_names,
-    )
+from utils import (
+    GradCAM,
+    get_device,
+    get_display_names,
+    logits_to_output,
+    pil_to_tensor,
+    render_gradcam_overlay,
+    resolve_densenet_target_layer,
+    set_class_names,
+)
 
 app = FastAPI(title="CheX DenseNet API", version="2.0.0")
 
