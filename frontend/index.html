@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hackthon-UOI-2025</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-grid"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="logo">
+        <path d="M12 2l3.5 6 6.5 1-4.7 4.6 1.1 6.4L12 17l-6 3.4 1.1-6.4L2.4 9l6.5-1L12 2z"></path>
+      </svg>
+      <div class="brand-text">
+        <span class="brand-title">Hackathon UOI 2025</span>
+        <span class="brand-sub">AI Diagnostics Studio</span>
+      </div>
+      <span class="badge">demo</span>
+    </div>
+    <nav class="top-links" aria-label="Βασικό μενού">
+      <a class="top-link" href="#upload">Upload</a>
+      <a class="top-link" href="#gradcam">X-Ray With Heatmap</a>
+      <a class="top-link" href="#llm">AI Explanation</a>
+      <a class="top-link" href="#results">Probabilities</a>
+    </nav>
+    <button id="themeBtn" class="icon-btn" aria-label="Εναλλαγή θέματος">
+      <span class="sun">☀️</span><span class="moon">🌙</span>
+    </button>
+  </header>
+
+  <main class="container">
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-copy">
+        <h1>Chest X-ray triage with Grad-CAM and AI explanation</h1>
+        <p>
+          Upload a chest radiograph, see what the model focuses on, view its probabilities,
+          and receive an AI-generated textual explanation based on the image findings.
+        </p>
+      </div>
+    </section>
+
+    <!-- 1. UPLOAD -->
+    <section class="pane upload" id="upload">
+      <div class="pane-header">
+        <h2>1. Upload X-ray</h2>
+        <p class="muted">Drag &amp; drop, paste (Ctrl/⌘+V) or select a chest radiograph.</p>
+      </div>
+
+      <div id="dropzone" class="dropzone" tabindex="0" aria-label="Περιοχή μεταφοράς αρχείου">
+        <input id="fileInput" type="file" accept="image/*" hidden />
+        <div class="drop-inner">
+          <div class="drop-icon">⬆</div>
+          <div>
+            <button id="browseBtn" class="btn">Select Image</button>
+            <span class="hint">or drag here</span>
+          </div>
+        </div>
+        <img id="preview" class="preview hidden" alt="Προεπισκόπηση εικόνας" />
+      </div>
+
+      <div class="actions">
+        <button id="predictBtn" class="btn primary" disabled>Predict</button>
+        <button id="clearBtn" class="btn ghost" disabled>Clear</button>
+      </div>
+      <div id="progress" class="progress hidden" role="status" aria-live="polite">
+        <span class="spinner"></span> Processing...
+      </div>
+    </section>
+
+    <!-- 2. WHAT THE MODEL SEES (GRAD-CAM) -->
+    <section class="pane gradcam" id="gradcam">
+      <div class="pane-header">
+        <h2>2. X-Ray With Heatmap</h2>
+        <p class="muted">Inspect Grad-CAM focus areas on top of the X-ray.</p>
+      </div>
+
+      <div id="gradcamViewer" class="cam-viewer hidden" aria-live="polite">
+        <div class="cam-header">
+          <div>
+            <h3>Grad-CAM Focus</h3>
+            <p id="gradcamTarget" class="muted"></p>
+          </div>
+          <button id="heatmapToggle" class="btn toggle-btn">Heatmap: ON</button>
+        </div>
+
+        <div class="cam-main">
+          <!-- Plain X-ray (no heatmap) -->
+          <div id="camPlain" class="cam-image-wrap hidden">
+            <img id="plainXray" alt="X-ray without heatmap" />
+          </div>
+
+          <!-- X-ray + heatmap stack (aligned) -->
+          <div id="camWithHeatmap" class="cam-image-wrap">
+            <img id="gradcamBase" alt="X-ray / Grad-CAM base" />
+            <img id="gradcamOverlay" alt="Grad-CAM heatmap overlay" />
+          </div>
+
+          <label class="slider-label" for="heatmapSlider">
+            <span>Heatmap opacity</span>
+            <input
+              type="range"
+              id="heatmapSlider"
+              min="0"
+              max="100"
+              value="60"
+            />
+          </label>
+        </div>
+      </div>
+
+      <p class="disclaimer">⚠️ Research demo — not for clinical decision-making.</p>
+    </section>
+
+    <!-- 3. PROBABILITIES -->
+    <section class="pane results" id="results">
+      <div class="pane-header">
+        <h2>3. Probabilities</h2>
+        <p class="muted">Model output: predicted findings and full class probabilities.</p>
+      </div>
+
+      <div id="result" class="result">
+        <div class="empty">No prediction has been made yet.</div>
+      </div>
+
+      <!-- All probabilities, instantly visible (no top-3-only, no details/summary) -->
+      <div id="bars" class="bars"></div>
+    </section>
+
+    <!-- 4. LLM EXPLANATION -->
+    <section class="pane llm" id="llm">
+      <div class="pane-header">
+        <h2>4. AI Explanation</h2>
+        <p class="muted">
+          A language model summarizes what the illness could be, based on the image findings and probabilities.
+        </p>
+      </div>
+
+      <div class="llm-controls">
+        <button id="llmBtn" class="btn primary" disabled>Generate explanation</button>
+        <button id="extractBtn" class="btn ghost" disabled>Extract report</button>
+        <span id="llmStatus" class="muted hidden">Contacting AI model…</span>
+      </div>
+
+      <div id="llmOutput" class="llm-output empty">
+        Run a prediction first, then ask the AI for an explanation.
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>© 2025 - Hackathon UOI demo</span>
+  </footer>
+
+  <script>
+    // ---- API endpoints ----
+    const API_URL = "http://localhost:8080/predict";
+    const LLM_API_URL = "http://localhost:8080/llm_explain";
+
+    // ---- DOM elements ----
+    const dropzone = document.getElementById("dropzone");
+    const fileInput = document.getElementById("fileInput");
+    const browseBtn = document.getElementById("browseBtn");
+    const predictBtn = document.getElementById("predictBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const preview = document.getElementById("preview");
+    const progress = document.getElementById("progress");
+
+    const result = document.getElementById("result");
+    const bars = document.getElementById("bars");
+
+    const gradcamViewer = document.getElementById("gradcamViewer");
+    const gradcamTarget = document.getElementById("gradcamTarget");
+    const gradcamBase = document.getElementById("gradcamBase");
+    const gradcamOverlay = document.getElementById("gradcamOverlay");
+    const plainXray = document.getElementById("plainXray");
+    const camPlain = document.getElementById("camPlain");
+    const camWithHeatmap = document.getElementById("camWithHeatmap");
+    const heatmapToggle = document.getElementById("heatmapToggle");
+    const heatmapSlider = document.getElementById("heatmapSlider");
+
+    const llmBtn = document.getElementById("llmBtn");
+    const extractBtn = document.getElementById("extractBtn");
+    const llmStatus = document.getElementById("llmStatus");
+    const llmOutput = document.getElementById("llmOutput");
+
+    const themeBtn = document.getElementById("themeBtn");
+
+    let currentFile = null;
+    let lastPrediction = null;   // { pred_class, probs }
+    let lastExplanation = "";    // AI description
+    let heatmapEnabled = true;
+
+    // ---- Theme ----
+    const setTheme = (mode) => {
+      document.documentElement.dataset.theme = mode;
+      localStorage.setItem("ui-theme", mode);
+    };
+    themeBtn.addEventListener("click", () => {
+      const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+      setTheme(next);
+    });
+    setTheme(localStorage.getItem("ui-theme") || "dark");
+
+    // ---- Helpers ----
+    function enableActions(enabled) {
+      predictBtn.disabled = !enabled;
+      clearBtn.disabled = !enabled;
+    }
+
+    function triggerDownload(url, filename) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    function resetUI() {
+      currentFile = null;
+      lastPrediction = null;
+      lastExplanation = "";
+      heatmapEnabled = true;
+
+      // upload
+      preview.src = "";
+      preview.classList.add("hidden");
+      dropzone.classList.remove("has-image");
+
+      enableActions(false);
+      progress.classList.add("hidden");
+
+      // results
+      result.innerHTML = `<div class="empty">Δεν έχει γίνει ακόμη πρόβλεψη.</div>`;
+      bars.innerHTML = "";
+
+      // gradcam
+      gradcamViewer.classList.add("hidden");
+      gradcamTarget.textContent = "";
+      gradcamBase.src = "";
+      gradcamOverlay.src = "";
+      plainXray.src = "";
+      camPlain.classList.add("hidden");
+      camWithHeatmap.classList.remove("hidden");
+      heatmapToggle.textContent = "Heatmap: ON";
+      if (heatmapSlider) {
+        heatmapSlider.value = 60;
+        gradcamOverlay.style.opacity = 0.6;
+      }
+
+      // llm
+      llmBtn.disabled = true;
+      extractBtn.disabled = true;
+      llmStatus.classList.add("hidden");
+      llmOutput.classList.add("empty");
+      llmOutput.textContent = "Run a prediction first, then ask the AI for an explanation.";
+    }
+
+    function setPreview(file) {
+      const url = URL.createObjectURL(file);
+      preview.src = url;
+      // Do not revoke: we reuse for plainXray
+      preview.classList.remove("hidden");
+      dropzone.classList.add("has-image");
+      enableActions(true);
+    }
+
+    function pickFile(file) {
+      if (!file || !file.type.startsWith("image/")) {
+        alert("Παρακαλώ διάλεξε αρχείο εικόνας.");
+        return;
+      }
+      currentFile = file;
+      setPreview(file);
+    }
+
+    // ---- Drag & Drop ----
+    ["dragenter", "dragover"].forEach(ev =>
+      dropzone.addEventListener(ev, e => {
+        e.preventDefault();
+        dropzone.classList.add("drag");
+      })
+    );
+    ["dragleave", "drop"].forEach(ev =>
+      dropzone.addEventListener(ev, e => {
+        e.preventDefault();
+        dropzone.classList.remove("drag");
+      })
+    );
+    dropzone.addEventListener("drop", e => {
+      const file = e.dataTransfer.files?.[0];
+      pickFile(file);
+    });
+
+    // ---- Click / Browse ----
+    browseBtn.addEventListener("click", () => fileInput.click());
+    dropzone.addEventListener("click", () => {
+      if (!dropzone.classList.contains("has-image")) fileInput.click();
+    });
+    fileInput.addEventListener("change", e => pickFile(e.target.files?.[0]));
+
+    // ---- Paste (Ctrl/⌘+V) ----
+    window.addEventListener("paste", e => {
+      const file = Array.from(e.clipboardData.files || [])[0];
+      if (file) pickFile(file);
+    });
+
+    // ---- Clear ----
+    clearBtn.addEventListener("click", resetUI);
+
+    // ---- Heatmap slider ----
+    if (heatmapSlider && gradcamOverlay) {
+      heatmapSlider.addEventListener("input", () => {
+        const value = Number(heatmapSlider.value) || 0;
+        gradcamOverlay.style.opacity = value / 100;
+      });
+    }
+
+    // ---- Heatmap toggle button ----
+    heatmapToggle.addEventListener("click", () => {
+      heatmapEnabled = !heatmapEnabled;
+      if (heatmapEnabled) {
+        camPlain.classList.add("hidden");
+        camWithHeatmap.classList.remove("hidden");
+        heatmapToggle.textContent = "Heatmap: ON";
+      } else {
+        camWithHeatmap.classList.add("hidden");
+        camPlain.classList.remove("hidden");
+        heatmapToggle.textContent = "Heatmap: OFF";
+      }
+    });
+
+    // ---- Predict ----
+    predictBtn.addEventListener("click", async () => {
+      if (!currentFile) return;
+
+      progress.classList.remove("hidden");
+      result.innerHTML = "";
+      bars.innerHTML = "";
+      gradcamViewer.classList.add("hidden");
+      gradcamBase.src = "";
+      gradcamOverlay.src = "";
+      plainXray.src = "";
+      gradcamTarget.textContent = "";
+
+      lastPrediction = null;
+      lastExplanation = "";
+      llmBtn.disabled = true;
+      extractBtn.disabled = true;
+      llmStatus.classList.add("hidden");
+      llmOutput.classList.add("empty");
+      llmOutput.textContent = "Run a prediction first, then ask the AI for an explanation.";
+
+      const form = new FormData();
+      form.append("file", currentFile);
+
+      try {
+        const resp = await fetch(API_URL, { method: "POST", body: form });
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({ detail: "Σφάλμα server" }));
+          throw new Error(err.detail || "Σφάλμα server");
+        }
+
+        const data = await resp.json();
+        lastPrediction = {
+          pred_class: data.pred_class,
+          probs: data.probs
+        };
+
+        let confidence_level = "";
+
+        if (data.overall_confidence <= 0.5) {
+          confidence_level = "Low Confidence"; // placeholder
+        } else if (data.overall_confidence <= 0.8) {
+          confidence_level = "Medium Confidence"; // placeholder
+        } else {
+          confidence_level = "High Confidence"; // placeholder
+        }
+
+        // Main label (top predictions)
+        const label = Array.isArray(data.pred_class)
+          ? data.pred_class.join(", ")
+          : data.pred_class;
+        result.innerHTML = `
+          <div class="pred">
+            <div class="pred-label">Highest Probabilities: ${label ?? "—"}
+              <br><br>Overall Confidence Level: ${confidence_level} (${(data.overall_confidence * 100).toFixed(1)}%) <br><br>
+            </div>
+          </div>
+        `;
+
+        // ---- ALL probabilities, sorted ----
+        bars.innerHTML = "";
+        if (data.probs && typeof data.probs === "object") {
+          const entries = Object.entries(data.probs);
+          entries.sort((a, b) => b[1] - a[1]); // high → low
+
+          entries.forEach(([name, p]) => {
+            const pct = (p * 100).toFixed(1);
+            const row = document.createElement("div");
+            row.className = "bar-row";
+            row.innerHTML = `
+              <div class="bar-label">${name}</div>
+              <div class="bar">
+                <div class="bar-fill" style="width:${pct}%"></div>
+              </div>
+              <div class="bar-val">${pct}%</div>
+            `;
+            bars.appendChild(row);
+          });
+        }
+
+        // ---- Grad-CAM ----
+        if (data.gradcam_overlay && data.gradcam_heatmap && data.processed_image) {
+
+          // Base: overlay image from backend (X-ray + heatmap 224x224)
+          gradcamBase.src = `data:image/png;base64,${data.gradcam_overlay}`;
+          // Overlay: heatmap-only
+          gradcamOverlay.src = `data:image/png;base64,${data.gradcam_heatmap}`;
+          // Plain X-ray: processed image from backend
+          plainXray.src = `data:image/png;base64,${data.processed_image}`;
+
+          if (heatmapSlider) {
+            const value = Number(heatmapSlider.value) || 60;
+            gradcamOverlay.style.opacity = value / 100;
+          } else {
+            gradcamOverlay.style.opacity = 0.6;
+          }
+
+          gradcamTarget.textContent = data.gradcam_target
+            ? `Highlighted class: ${data.gradcam_target}`
+            : "";
+
+          heatmapEnabled = true;
+          camPlain.classList.add("hidden");
+          camWithHeatmap.classList.remove("hidden");
+          heatmapToggle.textContent = "Heatmap: ON";
+
+          gradcamViewer.classList.remove("hidden");
+        }
+
+        // Enable LLM
+        llmBtn.disabled = false;
+        llmOutput.classList.remove("empty");
+        llmOutput.textContent = "Click “Generate explanation” to get an AI summary.";
+      } catch (e) {
+        result.innerHTML = `<div class="error">❌ ${e.message || e}</div>`;
+        gradcamViewer.classList.add("hidden");
+        llmBtn.disabled = true;
+        extractBtn.disabled = true;
+      } finally {
+        progress.classList.add("hidden");
+      }
+    });
+
+    // ---- LLM explanation ----
+    function buildFallbackExplanation(pred) {
+      if (!pred || !pred.probs) {
+        return "No probabilities available to generate an explanation.";
+      }
+      const entries = Object.entries(pred.probs).sort((a, b) => b[1] - a[1]);
+      const top = entries.slice(0, Math.min(3, entries.length));
+
+      const bullets = top.map(([name, p]) => {
+        const pct = (p * 100).toFixed(1);
+        return `${name} (~${pct}%)`;
+      });
+
+      return (
+        "Based on the model's output, the most likely findings include: " +
+        bullets.join(", ") +
+        ". This description is heuristic and should not be used for clinical decisions."
+      );
+    }
+
+    llmBtn.addEventListener("click", async () => {
+      if (!lastPrediction) return;
+
+      llmBtn.disabled = true;
+      extractBtn.disabled = true;
+      llmStatus.classList.remove("hidden");
+      llmOutput.classList.remove("empty");
+      llmOutput.textContent = "";
+
+      try {
+        const resp = await fetch(LLM_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(lastPrediction),
+        });
+
+        if (!resp.ok) {
+          throw new Error("LLM server error");
+        }
+
+        const data = await resp.json();
+        llmOutput.textContent =
+          data.explanation ||
+          "The LLM did not return an explanation. Please try again.";
+      } catch (e) {
+        llmOutput.textContent = buildFallbackExplanation(lastPrediction);
+      } finally {
+        llmStatus.classList.add("hidden");
+        llmBtn.disabled = false;
+        lastExplanation = llmOutput.textContent;
+        extractBtn.disabled = !lastExplanation;
+      }
+    });
+
+    // ---- Extract report ----
+    extractBtn.addEventListener("click", () => {
+      if (!lastPrediction || !lastPrediction.probs) {
+        alert("No prediction available. Please run a prediction first.");
+        return;
+      }
+      if (!lastExplanation) {
+        alert("No AI explanation available. Please generate the explanation first.");
+        return;
+      }
+
+      const baseName = prompt(
+        "Enter a base name for the exported files (e.g., patient_001):"
+      );
+      if (!baseName) {
+        return; // user cancelled
+      }
+
+      // 1) Save plain X-ray image
+      const xraySrc = plainXray.src || preview.src;
+      if (xraySrc) {
+        triggerDownload(xraySrc, `${baseName}_xray.png`);
+      } else {
+        alert("X-ray image not found in the viewer.");
+      }
+
+      // 2) Save X-ray + heatmap image
+      if (gradcamBase.src) {
+        triggerDownload(gradcamBase.src, `${baseName}_xray_heatmap.png`);
+      } else {
+        alert("X-ray + heatmap image not found.");
+      }
+
+      // 3) Save symptoms + explanation as CSV (Excel-readable)
+      const probs = lastPrediction.probs || {};
+      const entries = Object.entries(probs).sort((a, b) => b[1] - a[1]);
+
+      const lines = [];
+      lines.push("Finding,Probability");
+      entries.forEach(([name, p]) => {
+        const pct = (p * 100).toFixed(1);
+        lines.push(`"${name.replace(/"/g, '""')}",${pct}`);
+      });
+
+      lines.push("");
+      const safeExplanation = lastExplanation.replace(/"/g, '""');
+      lines.push(`"Explanation","${safeExplanation}"`);
+
+      const csvContent = lines.join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      triggerDownload(url, `${baseName}_report.csv`);
+      URL.revokeObjectURL(url);
+    });
+
+    // ---- Init ----
+    resetUI();
+  </script>
+</body>
+</html>
