@@ -12,6 +12,8 @@ from utils import encode_rgb_to_base64, preprocess_image, create_heatmap_images
 
 import os
 from typing import Dict, List, Union, Optional
+import shutil
+from pathlib import Path
 
 from pydantic import BaseModel
 from google import genai  # Gemini SDK
@@ -42,6 +44,20 @@ app.add_middleware(
 # Global model variable
 model = None
 device = None
+
+# Risk classification mapping
+RISK_CATEGORIES = {
+    "Low": ["Fracture"],
+    "Medium": ["Atelectasis", "Effusion", "Cardiomegaly", "Enlarged Cardiomediastinum", "Lung Opacity"],
+    "High": ["Consolidation", "Pneumothorax", "Edema", "Pneumonia", "Lung Lesion"]
+}
+
+def classify_risk(top_label: str) -> str:
+    """Classify image risk based on top predicted label"""
+    for risk_level, conditions in RISK_CATEGORIES.items():
+        if top_label in conditions:
+            return risk_level
+    return "Medium"  # Default to Medium if not found
 
 @app.on_event("startup")
 async def load_model():
@@ -148,6 +164,104 @@ async def predict(file: UploadFile = File(...)):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+
+
+@app.post("/predict_batch")
+async def predict_batch(files: List[UploadFile] = File(...)):
+    """
+    Process multiple images, classify them by risk, and organize into folders
+    
+    Returns:
+        - results: List of predictions for each image with risk classification
+        - summary: Count of images per risk category
+    """
+    if model is None:
+        raise HTTPException(status_code=503, detail="Model not loaded")
+    
+    # Create output directories
+    output_base = Path("classified_images")
+    output_base.mkdir(exist_ok=True)
+    
+    for risk_level in ["Low", "Medium", "High"]:
+        (output_base / risk_level).mkdir(exist_ok=True)
+    
+    results = []
+    risk_counts = {"Low": 0, "Medium": 0, "High": 0}
+    
+    try:
+        for idx, file in enumerate(files):
+            try:
+                # Read and validate image
+                contents = await file.read()
+                image = Image.open(io.BytesIO(contents)).convert('RGB')
+                
+                # Preprocess image
+                img_tensor, img_rgb = preprocess_image(image)
+                img_tensor = img_tensor.to(device)
+                
+                # Make prediction
+                with torch.no_grad():
+                    outputs = model(img_tensor)
+                    predictions = torch.sigmoid(outputs).cpu().numpy()[0]
+                
+                # Get top prediction
+                top_idx = np.argmax(predictions)
+                top_label = model.pathologies[top_idx]
+                top_prob = float(predictions[top_idx])
+                
+                # Classify risk
+                risk_level = classify_risk(top_label)
+                risk_counts[risk_level] += 1
+                
+                # Save image to appropriate folder
+                original_name = file.filename or f"image_{idx}.jpg"
+                safe_name = f"{idx:04d}_{original_name}"
+                output_path = output_base / risk_level / safe_name
+                
+                # Save the original image
+                image.save(output_path)
+                
+                # Create probabilities dictionary
+                probs = {
+                    pathology: float(predictions[i])
+                    for i, pathology in enumerate(model.pathologies)
+                }
+                
+                # Get top 5 predictions
+                top_indices = np.argsort(predictions)[::-1][:5]
+                top_predictions = [
+                    {"label": model.pathologies[i], "prob": float(predictions[i])}
+                    for i in top_indices
+                ]
+                
+                results.append({
+                    "filename": original_name,
+                    "index": idx,
+                    "top_label": top_label,
+                    "top_probability": top_prob,
+                    "risk_level": risk_level,
+                    "top_predictions": top_predictions,
+                    "all_probs": probs,
+                    "saved_path": str(output_path)
+                })
+                
+            except Exception as e:
+                results.append({
+                    "filename": file.filename or f"image_{idx}",
+                    "index": idx,
+                    "error": str(e),
+                    "risk_level": "Error"
+                })
+        
+        return JSONResponse(content={
+            "results": results,
+            "summary": risk_counts,
+            "output_directory": str(output_base)
+        })
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Batch prediction error: {str(e)}")
+
     
 class LLMExplainRequest(BaseModel):
     pred_class: Union[List[str], str]

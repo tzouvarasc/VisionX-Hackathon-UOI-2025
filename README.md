@@ -74,12 +74,26 @@ python -m http.server 3000
 
 ## 🎯 Usage
 
-1. **Upload X-ray**: Drag & drop ή click "Select Image"
+### Single Image Analysis
+
+1. **Upload X-ray**: Select "Single Image Analysis" mode, then drag & drop or click "Select Image"
 2. **Predict**: Click "Predict" button
 3. **View Results**: 
    - Top 5 pathology predictions
    - Probability bars
    - Grad-CAM heatmaps (overlay & pure heatmap)
+   - AI-generated explanation
+
+### Batch Risk Classification (NEW!)
+
+1. **Select Mode**: Choose "Batch Risk Classification" mode
+2. **Upload Multiple Images**: Select multiple chest X-ray images at once
+3. **Classify**: Click "Predict" to process all images
+4. **View Results**: Images are automatically classified into risk categories:
+   - 🔴 **High Risk**: Consolidation, Pneumothorax, Edema, Pneumonia, Lung Lesion
+   - 🟡 **Medium Risk**: Atelectasis, Effusion, Cardiomegaly, Enlarged Cardiomediastinum, Lung Opacity
+   - 🟢 **Low Risk**: Fracture
+5. **Output**: Images are saved to `classified_images/` folder organized by risk level
 
 ## 🔌 API Endpoints
 
@@ -95,7 +109,7 @@ Health check endpoint
 ```
 
 ### `POST /predict`
-Upload chest X-ray for prediction
+Upload chest X-ray for single image prediction
 
 **Request:**
 - Method: `POST`
@@ -117,12 +131,86 @@ Upload chest X-ray for prediction
 }
 ```
 
-## 🧪 Testing with cURL
+### `POST /predict_batch` (NEW!)
+Upload multiple chest X-rays for batch risk classification
+
+**Request:**
+- Method: `POST`
+- Content-Type: `multipart/form-data`
+- Body: `files` (multiple image files)
+
+**Response:**
+```json
+{
+  "results": [
+    {
+      "filename": "xray1.jpg",
+      "top_label": "Pneumonia",
+      "top_probability": 0.87,
+      "risk_level": "High",
+      "top_predictions": [...],
+      "saved_path": "classified_images/High/0000_xray1.jpg"
+    },
+    ...
+  ],
+  "summary": {
+    "High": 3,
+    "Medium": 5,
+    "Low": 2
+  },
+  "output_directory": "classified_images"
+}
+```
+
+### `POST /llm_explain`
+Get AI-generated explanation based on predictions
+
+**Request:**
+- Method: `POST`
+- Content-Type: `application/json`
+- Body: 
+```json
+{
+  "pred_class": ["Cardiomegaly", "Edema"],
+  "probs": {...}
+}
+```
+
+**Response:**
+```json
+{
+  "explanation": "Based on the chest X-ray findings..."
+}
+```
+
+## 🧪 Testing
+
+### Testing Single Prediction with cURL
 
 ```bash
 curl -X POST "http://localhost:8080/predict" \
   -F "file=@/path/to/xray.jpg"
 ```
+
+### Testing Batch Prediction with cURL
+
+```bash
+curl -X POST "http://localhost:8080/predict_batch" \
+  -F "files=@/path/to/xray1.jpg" \
+  -F "files=@/path/to/xray2.jpg" \
+  -F "files=@/path/to/xray3.jpg"
+```
+
+### Testing with Python Script
+
+A test script is provided in `backend/test_batch_api.py`:
+
+```bash
+cd backend
+python test_batch_api.py
+```
+
+This will automatically test the batch API with sample images from the `sample_uploads/` directory.
 
 ## ⚙️ Configuration
 
@@ -133,7 +221,32 @@ curl -X POST "http://localhost:8080/predict" \
 const API_URL = "http://localhost:8080/predict";
 ```
 
+## 📊 Risk Classification Categories
+
+The batch processing feature automatically classifies images into three risk levels based on the top predicted condition:
+
+### 🔴 High Risk
+- Consolidation
+- Pneumothorax
+- Edema
+- Pneumonia
+- Lung Lesion
+
+### 🟡 Medium Risk
+- Atelectasis
+- Effusion
+- Cardiomegaly
+- Enlarged Cardiomediastinum
+- Lung Opacity
+
+### 🟢 Low Risk
+- Fracture
+
+**Note:** Conditions not listed above default to Medium Risk.
+
 ## 📊 Supported Pathologies
+
+The model can detect the following pathologies from chest X-rays:
 
 - Atelectasis
 - Cardiomegaly
@@ -149,6 +262,10 @@ const API_URL = "http://localhost:8080/predict";
 - Pleural Thickening
 - Pneumonia
 - Pneumothorax
+- Lung Lesion
+- Lung Opacity
+- Enlarged Cardiomediastinum
+- Fracture
 
 ## 🔧 Troubleshooting
 

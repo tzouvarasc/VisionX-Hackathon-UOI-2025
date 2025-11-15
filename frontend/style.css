@@ -445,3 +445,61 @@ body{
 :root[data-theme="light"] .finding-text{
   background:#f9fafb;
 }
+
+/* batch preview */
+
+.batch-preview{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(15,23,42,.7);
+  border-radius:var(--radius-md);
+}
+:root[data-theme="light"] .batch-preview{
+  background:#f9fafb;
+}
+
+/* batch results */
+
+.batch-summary{
+  margin-bottom:1rem;
+}
+
+.batch-output{
+  display:flex;
+  flex-direction:column;
+  gap:1.5rem;
+}
+
+.risk-category{
+  border-radius:var(--radius-md);
+  background:rgba(15,23,42,.5);
+  padding:1rem;
+  border:1px solid rgba(148,163,184,.3);
+}
+:root[data-theme="light"] .risk-category{
+  background:#f9fafb;
+}
+
+.risk-category h3{
+  margin:0 0 1rem 0;
+  font-size:16px;
+  font-family:var(--font-display);
+  display:flex;
+  align-items:center;
+  gap:0.5rem;
+}
+
+.risk-high{color:#f97373}
+.risk-medium{color:#f59e0b}
+.risk-low{color:#10b981}
+
+.risk-images{
+  display:flex;
+  flex-direction:column;
+  gap:0.75rem;
+}

@@ -53,7 +53,19 @@
     <section class="pane upload" id="upload">
       <div class="pane-header">
         <h2>1. Upload X-ray</h2>
-        <p class="muted">Drag &amp; drop, paste (Ctrl/⌘+V) or select a chest radiograph.</p>
+        <p class="muted">Select single or multiple chest radiographs for batch processing.</p>
+      </div>
+
+      <!-- Mode selector -->
+      <div style="margin-bottom: 1rem;">
+        <label style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+          <input type="radio" name="uploadMode" value="single" checked id="singleMode" />
+          <span>Single Image Analysis</span>
+        </label>
+        <label style="display: inline-flex; align-items: center; gap: 0.5rem; margin-left: 2rem; cursor: pointer;">
+          <input type="radio" name="uploadMode" value="batch" id="batchMode" />
+          <span>Batch Risk Classification</span>
+        </label>
       </div>
 
       <div id="dropzone" class="dropzone" tabindex="0" aria-label="Περιοχή μεταφοράς αρχείου">
@@ -66,6 +78,7 @@
           </div>
         </div>
         <img id="preview" class="preview hidden" alt="Προεπισκόπηση εικόνας" />
+        <div id="batchPreview" class="batch-preview hidden"></div>
       </div>
 
       <div class="actions">
@@ -136,6 +149,33 @@
       <div id="bars" class="bars"></div>
     </section>
 
+    <!-- BATCH RESULTS -->
+    <section class="pane batch-results hidden" id="batchResults">
+      <div class="pane-header">
+        <h2>Batch Risk Classification Results</h2>
+        <p class="muted">Images organized by risk level based on top predicted condition.</p>
+      </div>
+
+      <div id="batchSummary" class="batch-summary"></div>
+      
+      <div id="batchOutput" class="batch-output">
+        <div class="risk-category">
+          <h3 class="risk-high">🔴 High Risk</h3>
+          <div id="highRisk" class="risk-images"></div>
+        </div>
+        
+        <div class="risk-category">
+          <h3 class="risk-medium">🟡 Medium Risk</h3>
+          <div id="mediumRisk" class="risk-images"></div>
+        </div>
+        
+        <div class="risk-category">
+          <h3 class="risk-low">🟢 Low Risk</h3>
+          <div id="lowRisk" class="risk-images"></div>
+        </div>
+      </div>
+    </section>
+
     <!-- 4. LLM EXPLANATION -->
     <section class="pane llm" id="llm">
       <div class="pane-header">
@@ -164,6 +204,7 @@
   <script>
     // ---- API endpoints ----
     const API_URL = "http://localhost:8080/predict";
+    const BATCH_API_URL = "http://localhost:8080/predict_batch";
     const LLM_API_URL = "http://localhost:8080/llm_explain";
 
     // ---- DOM elements ----
@@ -173,7 +214,10 @@
     const predictBtn = document.getElementById("predictBtn");
     const clearBtn = document.getElementById("clearBtn");
     const preview = document.getElementById("preview");
+    const batchPreview = document.getElementById("batchPreview");
     const progress = document.getElementById("progress");
+    const singleMode = document.getElementById("singleMode");
+    const batchMode = document.getElementById("batchMode");
 
     const result = document.getElementById("result");
     const bars = document.getElementById("bars");
@@ -195,7 +239,15 @@
 
     const themeBtn = document.getElementById("themeBtn");
 
+    const batchResults = document.getElementById("batchResults");
+    const batchSummary = document.getElementById("batchSummary");
+    const highRisk = document.getElementById("highRisk");
+    const mediumRisk = document.getElementById("mediumRisk");
+    const lowRisk = document.getElementById("lowRisk");
+
     let currentFile = null;
+    let currentFiles = [];  // For batch mode
+    let uploadMode = "single";  // "single" or "batch"
     let lastPrediction = null;   // { pred_class, probs }
     let lastExplanation = "";    // AI description
     let heatmapEnabled = true;
@@ -210,6 +262,22 @@
       setTheme(next);
     });
     setTheme(localStorage.getItem("ui-theme") || "dark");
+
+    // ---- Upload Mode ----
+    singleMode.addEventListener("change", (e) => {
+      if (e.target.checked) {
+        uploadMode = "single";
+        fileInput.removeAttribute("multiple");
+        resetUI();
+      }
+    });
+    batchMode.addEventListener("change", (e) => {
+      if (e.target.checked) {
+        uploadMode = "batch";
+        fileInput.setAttribute("multiple", "");
+        resetUI();
+      }
+    });
 
     // ---- Helpers ----
     function enableActions(enabled) {
@@ -228,6 +296,7 @@
 
     function resetUI() {
       currentFile = null;
+      currentFiles = [];
       lastPrediction = null;
       lastExplanation = "";
       heatmapEnabled = true;
@@ -235,14 +304,23 @@
       // upload
       preview.src = "";
       preview.classList.add("hidden");
+      batchPreview.classList.add("hidden");
+      batchPreview.innerHTML = "";
       dropzone.classList.remove("has-image");
 
       enableActions(false);
       progress.classList.add("hidden");
 
       // results
-      result.innerHTML = `<div class="empty">Δεν έχει γίνει ακόμη πρόβλεψη.</div>`;
+      result.innerHTML = `<div class="empty">No prediction has been made yet.</div>`;
       bars.innerHTML = "";
+
+      // batch results
+      batchResults.classList.add("hidden");
+      batchSummary.innerHTML = "";
+      highRisk.innerHTML = "";
+      mediumRisk.innerHTML = "";
+      lowRisk.innerHTML = "";
 
       // gradcam
       gradcamViewer.classList.add("hidden");
@@ -277,11 +355,34 @@
 
     function pickFile(file) {
       if (!file || !file.type.startsWith("image/")) {
-        alert("Παρακαλώ διάλεξε αρχείο εικόνας.");
+        alert("Please select an image file.");
         return;
       }
       currentFile = file;
       setPreview(file);
+    }
+
+    function pickFiles(files) {
+      if (!files || files.length === 0) {
+        alert("Please select at least one image file.");
+        return;
+      }
+      
+      // Filter only image files
+      const imageFiles = Array.from(files).filter(f => f.type.startsWith("image/"));
+      if (imageFiles.length === 0) {
+        alert("Please select valid image files.");
+        return;
+      }
+
+      currentFiles = imageFiles;
+      
+      // Show batch preview
+      preview.classList.add("hidden");
+      batchPreview.classList.remove("hidden");
+      batchPreview.innerHTML = `<p style="text-align:center; padding: 1rem;">${imageFiles.length} images selected</p>`;
+      dropzone.classList.add("has-image");
+      enableActions(true);
     }
 
     // ---- Drag & Drop ----
@@ -298,8 +399,12 @@
       })
     );
     dropzone.addEventListener("drop", e => {
-      const file = e.dataTransfer.files?.[0];
-      pickFile(file);
+      if (uploadMode === "batch") {
+        pickFiles(e.dataTransfer.files);
+      } else {
+        const file = e.dataTransfer.files?.[0];
+        pickFile(file);
+      }
     });
 
     // ---- Click / Browse ----
@@ -307,7 +412,13 @@
     dropzone.addEventListener("click", () => {
       if (!dropzone.classList.contains("has-image")) fileInput.click();
     });
-    fileInput.addEventListener("change", e => pickFile(e.target.files?.[0]));
+    fileInput.addEventListener("change", e => {
+      if (uploadMode === "batch") {
+        pickFiles(e.target.files);
+      } else {
+        pickFile(e.target.files?.[0]);
+      }
+    });
 
     // ---- Paste (Ctrl/⌘+V) ----
     window.addEventListener("paste", e => {
@@ -342,11 +453,20 @@
 
     // ---- Predict ----
     predictBtn.addEventListener("click", async () => {
+      if (uploadMode === "batch") {
+        await handleBatchPredict();
+      } else {
+        await handleSinglePredict();
+      }
+    });
+
+    async function handleSinglePredict() {
       if (!currentFile) return;
 
       progress.classList.remove("hidden");
       result.innerHTML = "";
       bars.innerHTML = "";
+      batchResults.classList.add("hidden");
       gradcamViewer.classList.add("hidden");
       gradcamBase.src = "";
       gradcamOverlay.src = "";
@@ -453,7 +573,7 @@
         // Enable LLM
         llmBtn.disabled = false;
         llmOutput.classList.remove("empty");
-        llmOutput.textContent = "Click “Generate explanation” to get an AI summary.";
+        llmOutput.textContent = "Click 'Generate explanation' to get an AI summary.";
       } catch (e) {
         result.innerHTML = `<div class="error">❌ ${e.message || e}</div>`;
         gradcamViewer.classList.add("hidden");
@@ -462,7 +582,102 @@
       } finally {
         progress.classList.add("hidden");
       }
-    });
+    }
+
+    async function handleBatchPredict() {
+      if (!currentFiles || currentFiles.length === 0) return;
+
+      progress.classList.remove("hidden");
+      result.innerHTML = "";
+      bars.innerHTML = "";
+      gradcamViewer.classList.add("hidden");
+      batchResults.classList.add("hidden");
+      highRisk.innerHTML = "";
+      mediumRisk.innerHTML = "";
+      lowRisk.innerHTML = "";
+      batchSummary.innerHTML = "";
+
+      const form = new FormData();
+      currentFiles.forEach(file => {
+        form.append("files", file);
+      });
+
+      try {
+        const resp = await fetch(BATCH_API_URL, { method: "POST", body: form });
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({ detail: "Server error" }));
+          throw new Error(err.detail || "Server error");
+        }
+
+        const data = await resp.json();
+        
+        // Display summary
+        const summary = data.summary || {};
+        batchSummary.innerHTML = `
+          <div style="display: flex; gap: 2rem; justify-content: center; padding: 1rem; background: var(--bg-secondary); border-radius: 8px; margin-bottom: 1.5rem;">
+            <div><strong>🔴 High Risk:</strong> ${summary.High || 0}</div>
+            <div><strong>🟡 Medium Risk:</strong> ${summary.Medium || 0}</div>
+            <div><strong>🟢 Low Risk:</strong> ${summary.Low || 0}</div>
+            <div><strong>Total:</strong> ${currentFiles.length}</div>
+          </div>
+          <p style="text-align: center; color: var(--text-muted);">Images saved to: ${data.output_directory || 'classified_images'}</p>
+        `;
+
+        // Display images grouped by risk
+        const results = data.results || [];
+        results.forEach((item, idx) => {
+          if (item.error) return; // Skip errors for now
+
+          const card = document.createElement("div");
+          card.style.cssText = "border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; background: var(--bg-secondary);";
+          
+          const topPreds = item.top_predictions ? item.top_predictions.slice(0, 3) : [];
+          const predsHTML = topPreds.map(p => `<div>${p.label}: ${(p.prob * 100).toFixed(1)}%</div>`).join('');
+          
+          card.innerHTML = `
+            <div style="display: flex; gap: 1rem; align-items: center;">
+              <div style="flex: 1;">
+                <strong>${item.filename}</strong>
+                <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                  <strong>Top Prediction:</strong> ${item.top_label} (${(item.top_probability * 100).toFixed(1)}%)
+                </div>
+                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+                  ${predsHTML}
+                </div>
+              </div>
+            </div>
+          `;
+
+          // Add to appropriate risk section
+          if (item.risk_level === "High") {
+            highRisk.appendChild(card);
+          } else if (item.risk_level === "Medium") {
+            mediumRisk.appendChild(card);
+          } else if (item.risk_level === "Low") {
+            lowRisk.appendChild(card);
+          }
+        });
+
+        // Add empty messages if needed
+        if (highRisk.children.length === 0) {
+          highRisk.innerHTML = '<p style="text-align:center; color: var(--text-muted); padding: 1rem;">No images in this category</p>';
+        }
+        if (mediumRisk.children.length === 0) {
+          mediumRisk.innerHTML = '<p style="text-align:center; color: var(--text-muted); padding: 1rem;">No images in this category</p>';
+        }
+        if (lowRisk.children.length === 0) {
+          lowRisk.innerHTML = '<p style="text-align:center; color: var(--text-muted); padding: 1rem;">No images in this category</p>';
+        }
+
+        batchResults.classList.remove("hidden");
+
+      } catch (e) {
+        result.innerHTML = `<div class="error">❌ ${e.message || e}</div>`;
+      } finally {
+        progress.classList.add("hidden");
+      }
+    }
 
     // ---- LLM explanation ----
     function buildFallbackExplanation(pred) {
