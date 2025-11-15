@@ -286,14 +286,15 @@ async def llm_explain(payload: LLMExplainRequest):
 
     probs = payload.probs or {}
 
-    # Build a compact text representation of the probabilities
+    # Build a compact text representation of the top 1 probability
     if probs:
         sorted_probs = sorted(probs.items(), key=lambda x: x[1], reverse=True)
-        lines = []
-        for name, p in sorted_probs[:10]:  # send top 10 to the LLM
-            pct = round(float(p) * 100, 1)
-            lines.append(f"- {name}: {pct}%")
-        probs_text = "\n".join(lines)
+        if sorted_probs:
+            top_name, top_p = sorted_probs[0]
+            pct = round(float(top_p) * 100, 1)
+            probs_text = f"- {top_name}: {pct}%"
+        else:
+            probs_text = "No probabilities available."
     else:
         probs_text = "No probabilities available."
 
@@ -304,9 +305,8 @@ async def llm_explain(payload: LLMExplainRequest):
 You are an experienced chest radiologist.
 
 You are given the output of a chest X-ray multi-label classifier.
-Based ONLY on the predicted classes and their probabilities, write a short
-explanation of what illnesses or radiographic findings these
-results might suggest.
+Based ONLY on the top predicted class and its probability, write a short
+explanation of what this illness or radiographic finding might suggest.
 
 IMPORTANT SAFETY REQUIREMENTS:
 - Do NOT give medical advice, triage, or treatment recommendations.
@@ -327,10 +327,8 @@ IMPORTANT SAFETY REQUIREMENTS:
 
 REFERENCE OUTPUT FORMAT:
 // START OF OUTPUT //
-ANALYSIS: // ON THIS STEP ONLY WRITE THE ANALYSIS OF THE TOP 3 PREDICTED CLASSES //
-- [FIRST PREDICTED CLASS] [small description of the first predicted class]
-- [SECOND PREDICTED CLASS] [small description of the second predicted class]
-- [THIRD PREDICTED CLASS] [small description of the third predicted class]
+ANALYSIS: // ON THIS STEP ONLY WRITE THE ANALYSIS OF THE TOP PREDICTED CLASS //
+- [TOP PREDICTED CLASS] [detailed description of what this finding means, its clinical significance, and common causes]
 
 SUMMARY: // A PARAGRAPH OF 3 TO 5 SENTENCES SUMMARIZING THE FINDINGS //
 [final summary based on the ANALYSIS section above. Do NOT mention probabilities or model limitations here.]
@@ -342,9 +340,9 @@ LIMITATIONS AND SAFETY NOTICE: // A BULLETED LIST OF 3 POINTS REMINDING THE USER
 // END OF OUTPUT //
 
 Model output:
-- Top predicted classes: {pred_classes_text}
+- Top predicted class: {pred_classes_text}
 
-Class probabilities:
+Class probability:
 {probs_text}
 """.strip()
 

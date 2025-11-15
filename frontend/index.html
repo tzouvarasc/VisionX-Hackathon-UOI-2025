@@ -268,6 +268,11 @@
       if (e.target.checked) {
         uploadMode = "single";
         fileInput.removeAttribute("multiple");
+        // Show sections 2, 3, 4 when switching to single mode
+        document.getElementById("gradcam").classList.remove("hidden");
+        document.getElementById("results").classList.remove("hidden");
+        document.getElementById("llm").classList.remove("hidden");
+        batchResults.classList.add("hidden");
         resetUI();
       }
     });
@@ -275,6 +280,10 @@
       if (e.target.checked) {
         uploadMode = "batch";
         fileInput.setAttribute("multiple", "");
+        // Hide sections 2, 3, 4 when switching to batch mode
+        document.getElementById("gradcam").classList.add("hidden");
+        document.getElementById("results").classList.add("hidden");
+        document.getElementById("llm").classList.add("hidden");
         resetUI();
       }
     });
@@ -464,6 +473,12 @@
       if (!currentFile) return;
 
       progress.classList.remove("hidden");
+      
+      // Show sections 2, 3, 4 in single mode
+      document.getElementById("gradcam").classList.remove("hidden");
+      document.getElementById("results").classList.remove("hidden");
+      document.getElementById("llm").classList.remove("hidden");
+      
       result.innerHTML = "";
       bars.innerHTML = "";
       batchResults.classList.add("hidden");
@@ -493,52 +508,37 @@
         }
 
         const data = await resp.json();
+        
+        // Get top prediction only
+        const topLabel = Array.isArray(data.pred_class) ? data.pred_class[0] : data.pred_class;
+        const topProb = data.probs[topLabel];
+        
+        // Store only top 1 prediction for LLM explanation
         lastPrediction = {
-          pred_class: data.pred_class,
+          pred_class: [topLabel],  // Only top 1
           probs: data.probs
         };
-
-        let confidence_level = "";
-
-        if (data.overall_confidence <= 0.5) {
-          confidence_level = "Low Confidence"; // placeholder
-        } else if (data.overall_confidence <= 0.8) {
-          confidence_level = "Medium Confidence"; // placeholder
-        } else {
-          confidence_level = "High Confidence"; // placeholder
-        }
-
-        // Main label (top predictions)
-        const label = Array.isArray(data.pred_class)
-          ? data.pred_class.join(", ")
-          : data.pred_class;
+        
         result.innerHTML = `
           <div class="pred">
-            <div class="pred-label">Highest Probabilities: ${label ?? "—"}
-              <br><br>Overall Confidence Level: ${confidence_level} (${(data.overall_confidence * 100).toFixed(1)}%) <br><br>
-            </div>
+            <div class="pred-label">Top Prediction: ${topLabel ?? "—"}</div>
           </div>
         `;
 
-        // ---- ALL probabilities, sorted ----
+        // ---- Show ONLY top 1 probability ----
         bars.innerHTML = "";
-        if (data.probs && typeof data.probs === "object") {
-          const entries = Object.entries(data.probs);
-          entries.sort((a, b) => b[1] - a[1]); // high → low
-
-          entries.forEach(([name, p]) => {
-            const pct = (p * 100).toFixed(1);
-            const row = document.createElement("div");
-            row.className = "bar-row";
-            row.innerHTML = `
-              <div class="bar-label">${name}</div>
-              <div class="bar">
-                <div class="bar-fill" style="width:${pct}%"></div>
-              </div>
-              <div class="bar-val">${pct}%</div>
-            `;
-            bars.appendChild(row);
-          });
+        if (topProb !== undefined) {
+          const pct = (topProb * 100).toFixed(1);
+          const row = document.createElement("div");
+          row.className = "bar-row";
+          row.innerHTML = `
+            <div class="bar-label">${topLabel}</div>
+            <div class="bar">
+              <div class="bar-fill" style="width:${pct}%"></div>
+            </div>
+            <div class="bar-val">${pct}%</div>
+          `;
+          bars.appendChild(row);
         }
 
         // ---- Grad-CAM ----
@@ -588,9 +588,15 @@
       if (!currentFiles || currentFiles.length === 0) return;
 
       progress.classList.remove("hidden");
+      
+      // Hide sections 2, 3, 4 in batch mode
+      gradcamViewer.classList.add("hidden");
+      document.getElementById("gradcam").classList.add("hidden");
+      document.getElementById("results").classList.add("hidden");
+      document.getElementById("llm").classList.add("hidden");
+      
       result.innerHTML = "";
       bars.innerHTML = "";
-      gradcamViewer.classList.add("hidden");
       batchResults.classList.add("hidden");
       highRisk.innerHTML = "";
       mediumRisk.innerHTML = "";
@@ -632,18 +638,13 @@
           const card = document.createElement("div");
           card.style.cssText = "border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; background: var(--bg-secondary);";
           
-          const topPreds = item.top_predictions ? item.top_predictions.slice(0, 3) : [];
-          const predsHTML = topPreds.map(p => `<div>${p.label}: ${(p.prob * 100).toFixed(1)}%</div>`).join('');
-          
+          // Show only top prediction (no top 3)
           card.innerHTML = `
             <div style="display: flex; gap: 1rem; align-items: center;">
               <div style="flex: 1;">
                 <strong>${item.filename}</strong>
                 <div style="margin-top: 0.5rem; font-size: 0.9rem;">
                   <strong>Top Prediction:</strong> ${item.top_label} (${(item.top_probability * 100).toFixed(1)}%)
-                </div>
-                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
-                  ${predsHTML}
                 </div>
               </div>
             </div>
@@ -685,18 +686,18 @@
         return "No probabilities available to generate an explanation.";
       }
       const entries = Object.entries(pred.probs).sort((a, b) => b[1] - a[1]);
-      const top = entries.slice(0, Math.min(3, entries.length));
+      const top = entries[0]; // Only top 1
 
-      const bullets = top.map(([name, p]) => {
+      if (top) {
+        const [name, p] = top;
         const pct = (p * 100).toFixed(1);
-        return `${name} (~${pct}%)`;
-      });
+        return (
+          `Based on the model's output, the most likely finding is: ${name} (~${pct}%). ` +
+          "This description is heuristic and should not be used for clinical decisions."
+        );
+      }
 
-      return (
-        "Based on the model's output, the most likely findings include: " +
-        bullets.join(", ") +
-        ". This description is heuristic and should not be used for clinical decisions."
-      );
+      return "No predictions available.";
     }
 
     llmBtn.addEventListener("click", async () => {
