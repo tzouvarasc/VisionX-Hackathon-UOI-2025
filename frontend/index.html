@@ -18,13 +18,14 @@
   <header class="topbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" aria-hidden="true" class="logo">
-        <path d="M12 2l3.5 6 6.5 1-4.7 4.6 1.1 6.4L12 17l-6 3.4 1.1-6.4L2.4 9l6.5-1L12 2z"></path>
+        <path d="M12 2v20M2 12h20M7 7h10v10H7z"></path>
+        <circle cx="12" cy="12" r="9"></circle>
       </svg>
       <div class="brand-text">
         <span class="brand-title">Hackathon UOI 2025</span>
-        <span class="brand-sub">AI Diagnostics Studio</span>
+        <span class="brand-sub">404: Disease Not Found</span>
       </div>
-      <span class="badge">demo</span>
+      <span class="badge">beta</span>
     </div>
     <nav class="top-links" aria-label="Βασικό μενού">
       <a class="top-link" href="#upload">Upload</a>
@@ -41,10 +42,9 @@
     <!-- HERO -->
     <section class="hero">
       <div class="hero-copy">
-        <h1>Chest X-ray triage with Grad-CAM and AI explanation</h1>
+        <h1>Chest X-ray AI Triage System</h1>
         <p>
-          Upload a chest radiograph, see what the model focuses on, view its probabilities,
-          and receive an AI-generated textual explanation based on the image findings.
+          AI Pre-Diagnostics Tool
         </p>
       </div>
     </section>
@@ -52,17 +52,17 @@
     <!-- 1. UPLOAD -->
     <section class="pane upload" id="upload">
       <div class="pane-header">
-        <h2>1. Upload X-ray</h2>
-        <p class="muted">Select single or multiple chest radiographs for batch processing.</p>
+        <h2>Upload X-ray Images</h2>
+        <p class="muted">Select single or multiple chest radiographs for intelligent analysis and risk classification.</p>
       </div>
 
       <!-- Mode selector -->
-      <div style="margin-bottom: 1rem;">
-        <label style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+      <div class="mode-selector">
+        <label>
           <input type="radio" name="uploadMode" value="single" checked id="singleMode" />
           <span>Single Image Analysis</span>
         </label>
-        <label style="display: inline-flex; align-items: center; gap: 0.5rem; margin-left: 2rem; cursor: pointer;">
+        <label>
           <input type="radio" name="uploadMode" value="batch" id="batchMode" />
           <span>Batch Risk Classification</span>
         </label>
@@ -73,8 +73,8 @@
         <div class="drop-inner">
           <div class="drop-icon">⬆</div>
           <div>
-            <button id="browseBtn" class="btn">Select Image</button>
-            <span class="hint">or drag here</span>
+            <button id="browseBtn" class="btn">📁 Select Image</button>
+            <span class="hint">or drag & drop here</span>
           </div>
         </div>
         <img id="preview" class="preview hidden" alt="Προεπισκόπηση εικόνας" />
@@ -82,7 +82,7 @@
       </div>
 
       <div class="actions">
-        <button id="predictBtn" class="btn primary" disabled>Predict</button>
+        <button id="predictBtn" class="btn primary" disabled>Analyze</button>
         <button id="clearBtn" class="btn ghost" disabled>Clear</button>
       </div>
       <div id="progress" class="progress hidden" role="status" aria-live="polite">
@@ -90,70 +90,83 @@
       </div>
     </section>
 
-    <!-- 2. WHAT THE MODEL SEES (GRAD-CAM) -->
-    <section class="pane gradcam" id="gradcam">
-      <div class="pane-header">
-        <h2>2. X-Ray With Heatmap</h2>
-        <p class="muted">Inspect Grad-CAM focus areas on top of the X-ray.</p>
-      </div>
-
-      <div id="gradcamViewer" class="cam-viewer hidden" aria-live="polite">
-        <div class="cam-header">
-          <div>
-            <h3>Grad-CAM Focus</h3>
-            <p id="gradcamTarget" class="muted"></p>
-          </div>
-          <button id="heatmapToggle" class="btn toggle-btn">Heatmap: ON</button>
+    <!-- 2 & 3: GRAD-CAM AND RESULTS (Side by Side) -->
+    <div class="two-column-layout">
+      <!-- 2. WHAT THE MODEL SEES (GRAD-CAM) -->
+      <section class="pane gradcam" id="gradcam">
+        <div class="pane-header">
+          <h2> AI Visual Attention</h2>
+          <p class="muted">Grad-CAM highlights diagnostic regions.</p>
         </div>
 
-        <div class="cam-main">
-          <!-- Plain X-ray (no heatmap) -->
-          <div id="camPlain" class="cam-image-wrap hidden">
-            <img id="plainXray" alt="X-ray without heatmap" />
+        <div id="gradcamViewer" class="cam-viewer hidden" aria-live="polite">
+          <div class="cam-header">
+            <div>
+              <h3>Grad-CAM Focus</h3>
+              <p id="gradcamTarget" class="muted"></p>
+            </div>
+            <button id="heatmapToggle" class="btn toggle-btn">Heatmap: ON</button>
           </div>
 
-          <!-- X-ray + heatmap stack (aligned) -->
-          <div id="camWithHeatmap" class="cam-image-wrap">
-            <img id="gradcamBase" alt="X-ray / Grad-CAM base" />
-            <img id="gradcamOverlay" alt="Grad-CAM heatmap overlay" />
-          </div>
+          <div class="cam-main">
+            <!-- Plain X-ray (no heatmap) -->
+            <div id="camPlain" class="cam-image-wrap hidden">
+              <img id="plainXray" alt="X-ray without heatmap" />
+            </div>
 
-          <label class="slider-label" for="heatmapSlider">
-            <span>Heatmap opacity</span>
-            <input
-              type="range"
-              id="heatmapSlider"
-              min="0"
-              max="100"
-              value="60"
-            />
-          </label>
+            <!-- X-ray + heatmap stack (aligned) -->
+            <div id="camWithHeatmap" class="cam-image-wrap">
+              <img id="gradcamBase" alt="X-ray / Grad-CAM base" />
+              <img id="gradcamOverlay" alt="Grad-CAM heatmap overlay" />
+            </div>
+
+            <label class="slider-label" for="heatmapSlider">
+              <span>Heatmap opacity</span>
+              <input
+                type="range"
+                id="heatmapSlider"
+                min="0"
+                max="100"
+                value="60"
+              />
+            </label>
+          </div>
         </div>
-      </div>
 
-      <p class="disclaimer">⚠️ Research demo — not for clinical decision-making.</p>
-    </section>
+        <p class="disclaimer">⚠️ <strong>Important:</strong> Research demonstration only.</p>
+      </section>
 
-    <!-- 3. PROBABILITIES -->
-    <section class="pane results" id="results">
-      <div class="pane-header">
-        <h2>3. Probabilities</h2>
-        <p class="muted">Model output: predicted findings and full class probabilities.</p>
-      </div>
+      <!-- 3. PROBABILITIES -->
+      <section class="pane results" id="results">
+        <div class="pane-header">
+          <h2> Prediction Results</h2>
+          <p class="muted">AI probability scores for pathologies.</p>
+        </div>
 
-      <div id="result" class="result">
-        <div class="empty">No prediction has been made yet.</div>
-      </div>
+        <div id="result" class="result">
+          <div class="empty">No prediction has been made yet.</div>
+        </div>
 
-      <!-- All probabilities, instantly visible (no top-3-only, no details/summary) -->
-      <div id="bars" class="bars"></div>
-    </section>
+        <!-- All probabilities, instantly visible (no top-3-only, no details/summary) -->
+        <div id="bars" class="bars"></div>
+        
+        <!-- Risk Level Display -->
+        <div id="riskLevel" class="risk-level-display" style="display: none;">
+          <div class="risk-level-label">Clinical Risk Level</div>
+          <div class="risk-level-value">
+            <span class="risk-level-icon"></span>
+            <span class="risk-level-text"></span>
+          </div>
+          <div class="risk-level-description"></div>
+        </div>
+      </section>
+    </div>
 
     <!-- BATCH RESULTS -->
     <section class="pane batch-results hidden" id="batchResults">
       <div class="pane-header">
-        <h2>Batch Risk Classification Results</h2>
-        <p class="muted">Images organized by risk level based on top predicted condition.</p>
+        <h2> Batch Risk Classification Results</h2>
+        <p class="muted">Automated triage: Images intelligently organized by clinical risk level based on AI predictions.</p>
       </div>
 
       <div id="batchSummary" class="batch-summary"></div>
@@ -179,16 +192,16 @@
     <!-- 4. LLM EXPLANATION -->
     <section class="pane llm" id="llm">
       <div class="pane-header">
-        <h2>4. AI Explanation</h2>
+        <h2> AI Clinical Interpretation</h2>
         <p class="muted">
-          A language model summarizes what the illness could be, based on the image findings and probabilities.
+          Advanced language model provides detailed explanation of findings, clinical significance, and potential diagnoses.
         </p>
       </div>
 
       <div class="llm-controls">
-        <button id="llmBtn" class="btn primary" disabled>Generate explanation</button>
-        <button id="extractBtn" class="btn ghost" disabled>Extract report</button>
-        <span id="llmStatus" class="muted hidden">Contacting AI model…</span>
+        <button id="llmBtn" class="btn primary" disabled> Generate Explanation</button>
+        <button id="extractBtn" class="btn ghost" disabled>📄 Extract Report</button>
+        <span id="llmStatus" class="muted hidden">⏳ Contacting AI model…</span>
       </div>
 
       <div id="llmOutput" class="llm-output empty">
@@ -198,7 +211,7 @@
   </main>
 
   <footer class="footer">
-    <span>© 2025 - Hackathon UOI demo</span>
+    <span>© 2025 Hackathon UOI · AI Pre-Diagnostics Tool · Research & Education Use Only</span>
   </footer>
 
   <script>
@@ -221,6 +234,7 @@
 
     const result = document.getElementById("result");
     const bars = document.getElementById("bars");
+    const riskLevel = document.getElementById("riskLevel");
 
     const gradcamViewer = document.getElementById("gradcamViewer");
     const gradcamTarget = document.getElementById("gradcamTarget");
@@ -302,6 +316,50 @@
       a.click();
       a.remove();
     }
+    
+    // Risk Level Classification Function
+    function classifyRiskLevel(topLabel) {
+      const riskCategories = {
+        high: {
+          conditions: ["Consolidation", "Pneumothorax", "Edema", "Pneumonia", "Lung Lesion"],
+          icon: "🔴",
+          text: "High Risk",
+          description: "Requires immediate medical attention"
+        },
+        medium: {
+          conditions: ["Atelectasis", "Effusion", "Cardiomegaly", "Enlarged Cardiomediastinum", "Lung Opacity"],
+          icon: "🟡",
+          text: "Medium Risk",
+          description: "Requires monitoring and follow-up"
+        },
+        low: {
+          conditions: ["Fracture"],
+          icon: "🟢",
+          text: "Low Risk",
+          description: "Structural issue requiring standard care"
+        }
+      };
+      
+      // Check which category the condition belongs to
+      for (const [level, data] of Object.entries(riskCategories)) {
+        if (data.conditions.includes(topLabel)) {
+          return {
+            level: level,
+            icon: data.icon,
+            text: data.text,
+            description: data.description
+          };
+        }
+      }
+      
+      // Default to medium risk if not found
+      return {
+        level: "medium",
+        icon: "🟡",
+        text: "Medium Risk",
+        description: "Requires clinical evaluation"
+      };
+    }
 
     function resetUI() {
       currentFile = null;
@@ -323,6 +381,7 @@
       // results
       result.innerHTML = `<div class="empty">No prediction has been made yet.</div>`;
       bars.innerHTML = "";
+      riskLevel.style.display = "none";
 
       // batch results
       batchResults.classList.add("hidden");
@@ -481,6 +540,7 @@
       
       result.innerHTML = "";
       bars.innerHTML = "";
+      riskLevel.style.display = "none";
       batchResults.classList.add("hidden");
       gradcamViewer.classList.add("hidden");
       gradcamBase.src = "";
@@ -540,6 +600,19 @@
           `;
           bars.appendChild(row);
         }
+        
+        // ---- Risk Level Classification ----
+        const riskClassification = classifyRiskLevel(topLabel);
+        riskLevel.className = `risk-level-display ${riskClassification.level}`;
+        riskLevel.style.display = 'block';
+        
+        const riskIcon = riskLevel.querySelector('.risk-level-icon');
+        const riskText = riskLevel.querySelector('.risk-level-text');
+        const riskDesc = riskLevel.querySelector('.risk-level-description');
+        
+        riskIcon.textContent = riskClassification.icon;
+        riskText.textContent = riskClassification.text;
+        riskDesc.textContent = riskClassification.description;
 
         // ---- Grad-CAM ----
         if (data.gradcam_overlay && data.gradcam_heatmap && data.processed_image) {
@@ -618,16 +691,30 @@
 
         const data = await resp.json();
         
-        // Display summary
+        // Display summary with cards
         const summary = data.summary || {};
         batchSummary.innerHTML = `
-          <div style="display: flex; gap: 2rem; justify-content: center; padding: 1rem; background: var(--bg-secondary); border-radius: 8px; margin-bottom: 1.5rem;">
-            <div><strong>🔴 High Risk:</strong> ${summary.High || 0}</div>
-            <div><strong>🟡 Medium Risk:</strong> ${summary.Medium || 0}</div>
-            <div><strong>🟢 Low Risk:</strong> ${summary.Low || 0}</div>
-            <div><strong>Total:</strong> ${currentFiles.length}</div>
+          <div class="batch-summary-grid">
+            <div class="summary-card high">
+              <div class="label">🔴 High Risk</div>
+              <div class="value">${summary.High || 0}</div>
+            </div>
+            <div class="summary-card medium">
+              <div class="label">🟡 Medium Risk</div>
+              <div class="value">${summary.Medium || 0}</div>
+            </div>
+            <div class="summary-card low">
+              <div class="label">🟢 Low Risk</div>
+              <div class="value">${summary.Low || 0}</div>
+            </div>
+            <div class="summary-card total">
+              <div class="label">📊 Total Images</div>
+              <div class="value">${currentFiles.length}</div>
+            </div>
           </div>
-          <p style="text-align: center; color: var(--text-muted);">Images saved to: ${data.output_directory || 'classified_images'}</p>
+          <p style="text-align: center; color: var(--muted); font-size: 13px;">
+            📁 Images saved to: <strong>${data.output_directory || 'classified_images'}</strong>
+          </p>
         `;
 
         // Display images grouped by risk
@@ -636,17 +723,13 @@
           if (item.error) return; // Skip errors for now
 
           const card = document.createElement("div");
-          card.style.cssText = "border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; background: var(--bg-secondary);";
+          card.className = "image-card";
           
           // Show only top prediction (no top 3)
           card.innerHTML = `
-            <div style="display: flex; gap: 1rem; align-items: center;">
-              <div style="flex: 1;">
-                <strong>${item.filename}</strong>
-                <div style="margin-top: 0.5rem; font-size: 0.9rem;">
-                  <strong>Top Prediction:</strong> ${item.top_label} (${(item.top_probability * 100).toFixed(1)}%)
-                </div>
-              </div>
+            <div class="filename">${item.filename}</div>
+            <div class="prediction">
+              <strong>Top Prediction:</strong> ${item.top_label} (${(item.top_probability * 100).toFixed(1)}%)
             </div>
           `;
 
@@ -680,7 +763,98 @@
       }
     }
 
-    // ---- LLM explanation ----
+    // ---- LLM explanation formatting ----
+    function formatLLMOutput(text) {
+      // Parse the LLM output and format it with sections
+      const sections = [];
+      
+      // Try to parse structured output
+      const analysisMatch = text.match(/ANALYSIS:\s*([\s\S]*?)(?=SUMMARY:|$)/i);
+      const summaryMatch = text.match(/SUMMARY:\s*([\s\S]*?)(?=LIMITATIONS|$)/i);
+      const limitationsMatch = text.match(/LIMITATIONS.*?:\s*([\s\S]*?)$/i);
+      
+      let html = '';
+      
+      if (analysisMatch || summaryMatch || limitationsMatch) {
+        // Structured output detected
+        if (analysisMatch) {
+          const content = analysisMatch[1].trim();
+          html += `
+            <div class="llm-section analysis">
+              <div class="llm-section-title">📋 Clinical Analysis</div>
+              <div class="llm-section-content">${formatContent(content)}</div>
+            </div>
+          `;
+        }
+        
+        if (summaryMatch) {
+          const content = summaryMatch[1].trim();
+          html += `
+            <div class="llm-section summary">
+              <div class="llm-section-title">📝 Summary</div>
+              <div class="llm-section-content">${formatContent(content)}</div>
+            </div>
+          `;
+        }
+        
+        if (limitationsMatch) {
+          const content = limitationsMatch[1].trim();
+          html += `
+            <div class="llm-section limitations">
+              <div class="llm-section-title">⚠️ Important Disclaimers</div>
+              <div class="llm-section-content">${formatContent(content)}</div>
+            </div>
+          `;
+        }
+        
+        return html;
+      } else {
+        // Unstructured output - just format nicely
+        return `<div class="llm-section-content">${formatContent(text)}</div>`;
+      }
+    }
+    
+    function formatContent(text) {
+      // Convert bullet points to proper list
+      const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+      const hasBullets = lines.some(line => line.startsWith('-') || line.startsWith('•'));
+      
+      if (hasBullets) {
+        const listItems = [];
+        let currentParagraph = [];
+        
+        for (const line of lines) {
+          if (line.startsWith('-') || line.startsWith('•')) {
+            if (currentParagraph.length > 0) {
+              listItems.push(`<p>${currentParagraph.join(' ')}</p>`);
+              currentParagraph = [];
+            }
+            listItems.push(line.replace(/^[-•]\s*/, ''));
+          } else {
+            currentParagraph.push(line);
+          }
+        }
+        
+        if (currentParagraph.length > 0) {
+          listItems.push(`<p>${currentParagraph.join(' ')}</p>`);
+        }
+        
+        // Separate paragraphs from list items
+        const paragraphs = listItems.filter(item => item.startsWith('<p>'));
+        const bullets = listItems.filter(item => !item.startsWith('<p>'));
+        
+        let html = paragraphs.join('');
+        if (bullets.length > 0) {
+          html += '<ul>' + bullets.map(item => `<li>${item}</li>`).join('') + '</ul>';
+        }
+        
+        return html;
+      } else {
+        // Just paragraphs
+        return lines.map(line => `<p>${line}</p>`).join('');
+      }
+    }
+    
     function buildFallbackExplanation(pred) {
       if (!pred || !pred.probs) {
         return "No probabilities available to generate an explanation.";
@@ -707,7 +881,7 @@
       extractBtn.disabled = true;
       llmStatus.classList.remove("hidden");
       llmOutput.classList.remove("empty");
-      llmOutput.textContent = "";
+      llmOutput.innerHTML = "";
 
       try {
         const resp = await fetch(LLM_API_URL, {
@@ -721,15 +895,18 @@
         }
 
         const data = await resp.json();
-        llmOutput.textContent =
-          data.explanation ||
-          "The LLM did not return an explanation. Please try again.";
+        const explanation = data.explanation || "The LLM did not return an explanation. Please try again.";
+        
+        // Format the explanation with sections
+        llmOutput.innerHTML = formatLLMOutput(explanation);
+        lastExplanation = explanation; // Store raw text for export
       } catch (e) {
-        llmOutput.textContent = buildFallbackExplanation(lastPrediction);
+        const fallback = buildFallbackExplanation(lastPrediction);
+        llmOutput.innerHTML = formatLLMOutput(fallback);
+        lastExplanation = fallback;
       } finally {
         llmStatus.classList.add("hidden");
         llmBtn.disabled = false;
-        lastExplanation = llmOutput.textContent;
         extractBtn.disabled = !lastExplanation;
       }
     });
