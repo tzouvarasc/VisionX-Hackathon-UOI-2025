@@ -47,6 +47,7 @@ device = None
 
 # Risk classification mapping
 RISK_CATEGORIES = {
+    "No Finding": ["No Finding"],  # Normal/healthy chest X-ray
     "Low": ["Fracture"],
     "Medium": ["Atelectasis", "Effusion", "Cardiomegaly", "Enlarged Cardiomediastinum", "Lung Opacity"],
     "High": ["Consolidation", "Pneumothorax", "Edema", "Pneumonia", "Lung Lesion"]
@@ -112,19 +113,34 @@ async def predict(file: UploadFile = File(...)):
             outputs = model(img_tensor)
             predictions = torch.sigmoid(outputs).cpu().numpy()[0]
         
-        # Create probabilities dictionary
+        # Create probabilities dictionary - filter out empty labels
         probs = {
             pathology: float(predictions[i])
             for i, pathology in enumerate(model.pathologies)
+            if pathology and pathology.strip()  # Only include non-empty labels
         }
         
-        # Get top predictions
-        top_indices = np.argsort(predictions)[::-1][:5]
-        top_predictions = [model.pathologies[i] for i in top_indices]
+        # Get top predictions - only from non-empty labels
+        valid_indices = [i for i, p in enumerate(model.pathologies) if p and p.strip()]
+        valid_predictions = [(i, predictions[i]) for i in valid_indices]
+        valid_predictions.sort(key=lambda x: x[1], reverse=True)
         
-        # Generate Grad-CAM for the top prediction
-        top_class_idx = top_indices[0]
-        top_class_name = model.pathologies[top_class_idx]
+        # Check if this is a "No Finding" case (all predictions are low)
+        max_prob = valid_predictions[0][1] if valid_predictions else 0.0
+        
+        if max_prob < 0.3:  # Threshold for "No Finding"
+            top_predictions = ["No Finding"]
+            top_class_name = "No Finding"
+            # Add "No Finding" to probs with high confidence
+            probs["No Finding"] = float(1.0 - max_prob)
+            # Use a middle layer for visualization when no finding
+            top_class_idx = valid_predictions[0][0] if valid_predictions else 0
+        else:
+            # Get top 5 valid predictions
+            top_indices = [idx for idx, _ in valid_predictions[:5]]
+            top_predictions = [model.pathologies[i] for i in top_indices]
+            top_class_idx = top_indices[0]
+            top_class_name = model.pathologies[top_class_idx]
         
         # Create Grad-CAM
         target_layers = [model.features.norm5]
@@ -182,11 +198,11 @@ async def predict_batch(files: List[UploadFile] = File(...)):
     output_base = Path("classified_images")
     output_base.mkdir(exist_ok=True)
     
-    for risk_level in ["Low", "Medium", "High"]:
+    for risk_level in ["Low", "Medium", "High", "No Finding"]:
         (output_base / risk_level).mkdir(exist_ok=True)
     
     results = []
-    risk_counts = {"Low": 0, "Medium": 0, "High": 0}
+    risk_counts = {"Low": 0, "Medium": 0, "High": 0, "No Finding": 0}
     
     try:
         for idx, file in enumerate(files):
@@ -204,13 +220,27 @@ async def predict_batch(files: List[UploadFile] = File(...)):
                     outputs = model(img_tensor)
                     predictions = torch.sigmoid(outputs).cpu().numpy()[0]
                 
-                # Get top prediction
-                top_idx = np.argmax(predictions)
-                top_label = model.pathologies[top_idx]
-                top_prob = float(predictions[top_idx])
+                # Filter valid predictions (non-empty labels)
+                valid_indices = [i for i, p in enumerate(model.pathologies) if p and p.strip()]
+                valid_predictions = [(i, predictions[i]) for i in valid_indices]
+                valid_predictions.sort(key=lambda x: x[1], reverse=True)
                 
-                # Classify risk
-                risk_level = classify_risk(top_label)
+                # Check if this is a "No Finding" case
+                max_prob = valid_predictions[0][1] if valid_predictions else 0.0
+                
+                if max_prob < 0.3:  # Threshold for "No Finding"
+                    top_label = "No Finding"
+                    top_prob = 1.0 - max_prob  # Confidence in "No Finding"
+                    risk_level = "No Finding"
+                else:
+                    top_idx = valid_predictions[0][0]
+                    top_label = model.pathologies[top_idx]
+                    top_prob = float(predictions[top_idx])
+                    risk_level = classify_risk(top_label)
+                
+                # Update risk counts
+                if risk_level not in risk_counts:
+                    risk_counts[risk_level] = 0
                 risk_counts[risk_level] += 1
                 
                 # Save image to appropriate folder
@@ -218,20 +248,23 @@ async def predict_batch(files: List[UploadFile] = File(...)):
                 safe_name = f"{idx:04d}_{original_name}"
                 output_path = output_base / risk_level / safe_name
                 
+                # Create directory if it doesn't exist (for "No Finding")
+                (output_base / risk_level).mkdir(exist_ok=True)
+                
                 # Save the original image
                 image.save(output_path)
                 
-                # Create probabilities dictionary
+                # Create probabilities dictionary - filter out empty labels
                 probs = {
                     pathology: float(predictions[i])
                     for i, pathology in enumerate(model.pathologies)
+                    if pathology and pathology.strip()
                 }
                 
-                # Get top 5 predictions
-                top_indices = np.argsort(predictions)[::-1][:5]
+                # Get top 5 valid predictions
                 top_predictions = [
                     {"label": model.pathologies[i], "prob": float(predictions[i])}
-                    for i in top_indices
+                    for i, _ in valid_predictions[:5]
                 ]
                 
                 results.append({

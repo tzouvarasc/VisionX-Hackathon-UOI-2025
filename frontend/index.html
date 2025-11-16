@@ -316,6 +316,12 @@
     // Risk Level Classification Function
     function classifyRiskLevel(topLabel) {
       const riskCategories = {
+        normal: {
+          conditions: ["No Finding"],
+          icon: "✅",
+          text: "No Finding",
+          description: "No significant abnormalities detected"
+        },
         high: {
           conditions: ["Consolidation", "Pneumothorax", "Edema", "Pneumonia", "Lung Lesion"],
           icon: "🔴",
@@ -704,7 +710,7 @@
               <div class="value">${summary.Low || 0}</div>
             </div>
             <div class="summary-card total">
-              <div class="label">📊 Total Images</div>
+              <div class="label">Total</div>
               <div class="value">${currentFiles.length}</div>
             </div>
           </div>

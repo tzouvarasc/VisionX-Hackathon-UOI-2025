@@ -747,20 +747,8 @@ body{
   background:linear-gradient(90deg, var(--primary), var(--accent));
   border-radius:inherit;
   transform-origin:left center;
-  animation:grow .8s cubic-bezier(.21,.97,.34,1) both;
   box-shadow: 0 0 10px rgba(20, 184, 166, 0.5);
   position: relative;
-}
-
-.bar-fill::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  animation: shimmer 2s infinite;
 }
 
 @keyframes shimmer {
@@ -866,6 +854,19 @@ body{
 
 .risk-level-display.low:hover {
   box-shadow: var(--shadow-md), 0 0 30px rgba(16, 185, 129, 0.2);
+}
+
+.risk-level-display.normal {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.risk-level-display.normal .risk-level-value {
+  color: #22c55e;
+}
+
+.risk-level-display.normal:hover {
+  box-shadow: var(--shadow-md), 0 0 30px rgba(34, 197, 94, 0.2);
 }
 
 /* Grad-CAM viewer */
