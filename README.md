@@ -267,17 +267,6 @@ The model can detect the following pathologies from chest X-rays:
 - Enlarged Cardiomediastinum
 - Fracture
 
-## 🔧 Troubleshooting
-
-### CORS Errors
-Βεβαιώσου ότι το backend τρέχει και ότι το `API_URL` στο frontend είναι σωστό.
-
-### Model Download
-Την πρώτη φορά, το TorchXRayVision θα κατεβάσει το μοντέλο (~500MB). Περίμενε λίγα λεπτά.
-
-### GPU Memory
-Αν έχεις GPU memory issues, το μοντέλο θα πέσει αυτόματα σε CPU.
-
 ## 📝 Notes
 
 - Το μοντέλο είναι για **research/demo purposes** μόνο
