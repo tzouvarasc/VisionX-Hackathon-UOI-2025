@@ -19,7 +19,7 @@ from pydantic import BaseModel
 from google import genai  # Gemini SDK
 
 # The client picks up the API key from GEMINI_API_KEY env var
-GEMINI_API_KEY = "AIzaSyDoQHu5eYIzmmJL9tdAsyL_ODXEP7Ceulc"
+GEMINI_API_KEY = ""  # TODO: Add your Gemini API key here
 if not GEMINI_API_KEY:
     raise RuntimeError("Please set the GEMINI_API_KEY environment variable.")
 
