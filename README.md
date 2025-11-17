@@ -588,26 +588,6 @@ VisionX uses a four-tier risk stratification system based on clinical urgency:
 
 **Action:** **Prioritize for urgent radiologist review and clinical assessment**
 
----
-
-### Classification Logic
-
-```python
-# Simplified pseudocode
-if max_probability < 0.3:
-    classification = "No Finding"
-elif top_label in ["Fracture"]:
-    classification = "Low Risk"
-elif top_label in ["Atelectasis", "Effusion", ...]:
-    classification = "Medium Risk"
-elif top_label in ["Consolidation", "Pneumothorax", ...]:
-    classification = "High Risk"
-else:
-    classification = "Medium Risk"  # Default fallback
-```
-
----
-
 ## 🧪 Model Details
 
 ### Architecture: DenseNet121
