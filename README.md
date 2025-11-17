@@ -22,7 +22,7 @@
 - [Project Vision](#-project-vision)
 - [Key Features](#-key-features)
 - [Risk Classification System](#-risk-classification-system)
-- [Technical Architecture](#-technical-architecture)
+- [Technical Architecture](#technical-architecture)
 - [Project Structure](#-project-structure)
 - [Getting Started](#-getting-started)
   - [Installation](#installation)
