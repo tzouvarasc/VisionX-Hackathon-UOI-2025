@@ -28,7 +28,6 @@
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
   - [Running the Application](#running-the-application)
-- [Risk Classification System](#-risk-classification-system)
 - [Acknowledgments](#-acknowledgments)
 - [License](#-license)
 
@@ -37,10 +36,6 @@
 ## 🎬 Media Showcase
 
 ### Demo Video
-
-https://github.com/user-attachments/assets/your-video-id-here
-
-> **Note:** To embed the video in your GitHub README, upload `VisionX_demo.mp4` to GitHub (via Issues or directly) and replace the link above.
 
 ---
 
@@ -91,7 +86,6 @@ In modern healthcare facilities, radiologists face an overwhelming volume of che
 - Process multiple X-rays simultaneously (10-100+ images)
 - Automatic risk stratification (High/Medium/Low/No Finding)
 - Organized file output by risk category
-- Aggregate statistics and summary reports
 
 ### 🧠 AI Clinical Interpretation
 
@@ -242,66 +236,23 @@ VisionX/
 
 ## 🚀 Getting Started
 
-### Prerequisites
-
-Before you begin, ensure you have the following installed:
-
-- **Python 3.8 or higher** ([Download](https://www.python.org/downloads/))
-- **pip** (comes with Python)
-- **Git** (optional, for cloning)
-- **CUDA Toolkit** (optional, for GPU acceleration)
-
 ### Installation
 
-#### 1. Clone the Repository
-
-```bash
-git clone https://github.com/yourusername/VisionX.git
-cd VisionX
-```
-
-#### 2. Set Up Python Environment
-
-**Option A: Using Virtual Environment (Recommended)**
-
-```bash
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-# On Windows:
-venv\Scripts\activate
-# On macOS/Linux:
-source venv/bin/activate
-```
-
-**Option B: Using Conda**
-
-```bash
-conda create -n visionx python=3.10
-conda activate visionx
-```
-
-#### 3. Install Backend Dependencies
+#### 1. Before you begin, ensure you have the following installed:
 
 ```bash
 cd backend
 pip install -r requirements.txt
 ```
 
-**Core dependencies include:**
-- `fastapi` - Web framework
-- `uvicorn` - ASGI server
-- `torch` & `torchvision` - Deep learning
-- `torchxrayvision` - Medical imaging models
-- `pytorch-grad-cam` - Visualization
-- `pillow` - Image processing
-- `python-multipart` - File uploads
-- `google-generativeai` - LLM integration
+#### 2. Clone the Repository
 
-#### 4. Configure API Keys
+```bash
+git clone https://github.com/yourusername/VisionX.git
+cd VisionX
+```
 
-Create a `.env` file in the `backend/` directory:
+#### 3. Configure API Keys
 
 ```bash
 # Google Gemini API Key (for AI explanations)
@@ -319,19 +270,7 @@ cd backend
 python app_fastapi.py
 ```
 
-**Expected output:**
-```
-Loading CheXpert DenseNet121 model...
-✓ Model loaded successfully!
-Device: cuda (or cpu)
-Pathologies: ['Atelectasis', 'Consolidation', ...]
-INFO:     Started server process
-INFO:     Uvicorn running on http://0.0.0.0:8000
-```
-
 #### Step 2: Start the Frontend
-
-**Option A: Python HTTP Server**
 
 ```bash
 # In a new terminal
@@ -341,21 +280,10 @@ python -m http.server 3000
 
 Frontend available at: **http://localhost:3000**
 
-**Option B: VS Code Live Server**
-
-1. Install "Live Server" extension
-2. Right-click `frontend/index.html`
-3. Select "Open with Live Server"
-
-**Option C: Direct File Access**
-
-Simply open `frontend/index.html` in your browser (some features may require CORS setup).
-
 #### Step 3: Access the Application
 
 Open your browser and navigate to:
 - **Frontend UI**: http://localhost:3000
-- **API Docs**: http://localhost:8000/docs (FastAPI Swagger UI)
 - **Health Check**: http://localhost:8000/
 
 ---
