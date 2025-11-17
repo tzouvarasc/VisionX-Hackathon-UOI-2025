@@ -25,11 +25,9 @@
 - [Technical Architecture](#-technical-architecture)
 - [Project Structure](#-project-structure)
 - [Getting Started](#-getting-started)
-  - [Prerequisites](#prerequisites)
   - [Installation](#installation)
   - [Running the Application](#running-the-application)
 - [Acknowledgments](#-acknowledgments)
-- [License](#-license)
 
 ---
 
