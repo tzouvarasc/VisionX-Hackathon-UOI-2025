@@ -241,22 +241,14 @@ VisionX/
 #### 1. Before you begin, ensure you have the following installed:
 
 ```bash
-cd backend
 pip install -r requirements.txt
 ```
 
-#### 2. Clone the Repository
+#### 2. Configure API Keys
 
 ```bash
-git clone https://github.com/yourusername/VisionX.git
-cd VisionX
-```
-
-#### 3. Configure API Keys
-
-```bash
-# Google Gemini API Key (for AI explanations)
-GOOGLE_API_KEY=your_gemini_api_key_here
+# Fill your Google Gemini API Key (for AI explanations) on line-22 on app_fastapi.py
+GEMINI_API_KEY = ""  # TODO: Add your Gemini API key here
 ```
 
 > Get your free API key at [Google AI Studio](https://makersuite.google.com/app/apikey)
