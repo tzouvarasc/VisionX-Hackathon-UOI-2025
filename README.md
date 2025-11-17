@@ -392,6 +392,4 @@ Open your browser and navigate to:
 
 ### 🌟 If you found this project helpful, please give it a star!
 
-Made with ❤️ by [Your Team Name] | Hackathon UOI 2025
-
 </div>
