@@ -419,20 +419,11 @@ VisionX uses a four-tier risk stratification system based on clinical urgency:
 ### ✅ No Finding (Normal)
 **Conditions:** No significant pathology detected (all predictions < 30% confidence)
 
-**Action:** Routine follow-up, no immediate concern
-
 ---
 
 ### 🟢 Low Risk
 **Conditions:**
 - Fracture
-
-**Characteristics:**
-- Structural issues requiring standard orthopedic care
-- Non-life-threatening
-- Scheduled treatment appropriate
-
-**Action:** Refer to orthopedics, standard priority
 
 ---
 
@@ -444,13 +435,6 @@ VisionX uses a four-tier risk stratification system based on clinical urgency:
 - Enlarged Cardiomediastinum
 - Lung Opacity
 
-**Characteristics:**
-- Requires monitoring and follow-up
-- May indicate chronic conditions
-- Potential for deterioration if untreated
-
-**Action:** Schedule timely evaluation, monitor symptoms
-
 ---
 
 ### 🔴 High Risk
@@ -460,13 +444,6 @@ VisionX uses a four-tier risk stratification system based on clinical urgency:
 - Pulmonary Edema (fluid in lungs)
 - Pneumonia (lung infection)
 - Lung Lesion (mass/nodule)
-
-**Characteristics:**
-- Requires immediate medical attention
-- Potential for rapid deterioration
-- May indicate acute, severe pathology
-
-**Action:** **Prioritize for urgent radiologist review and clinical assessment**
 
 ---
 
