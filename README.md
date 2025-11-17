@@ -1,4 +1,4 @@
-# VisionX - AI-Powered Chest X-Ray Pre-Diagnostic Assistant
+# VisionX - AI-Powered Chest X-Ray Pre-Diagnostic Tool
 
 <div align="center">
 
@@ -11,7 +11,6 @@
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green.svg)](https://fastapi.tiangolo.com/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-red.svg)](https://pytorch.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 </div>
 
@@ -42,17 +41,6 @@
 https://github.com/user-attachments/assets/your-video-id-here
 
 > **Note:** To embed the video in your GitHub README, upload `VisionX_demo.mp4` to GitHub (via Issues or directly) and replace the link above.
-
-### Screenshots
-
-<div align="center">
-
-| Single Image Analysis | Batch Risk Classification |
-|:---:|:---:|
-| ![Single Analysis](docs/screenshots/single-analysis.png) | ![Batch Classification](docs/screenshots/batch-classification.png) |
-| Real-time pathology detection with Grad-CAM visualization | Automated risk stratification for multiple X-rays |
-
-</div>
 
 ---
 
@@ -374,11 +362,6 @@ Open your browser and navigate to:
 
 ## 🎓 Acknowledgments
 
-### Hackathon UOI 2025
-- **Team Members:** [Add your team members]
-- **Achievement:** 🏆 2nd Place Winner
-- **Category:** Healthcare AI & Medical Imaging
-
 ### Open Source Projects
 - [TorchXRayVision](https://github.com/mlmed/torchxrayvision) by Joseph Paul Cohen - Medical imaging models
 - [CheXpert Dataset](https://stanfordmlgroup.github.io/competitions/chexpert/) by Stanford ML Group
@@ -386,20 +369,9 @@ Open your browser and navigate to:
 - [Grad-CAM](https://github.com/jacobgil/pytorch-grad-cam) by Jacob Gildenblat - Visualization library
 - [Google Gemini](https://deepmind.google/technologies/gemini/) - LLM integration
 
-### Research Papers
-- **DenseNet**: Huang et al. (2017) - "Densely Connected Convolutional Networks"
-- **CheXpert**: Irvin et al. (2019) - "CheXpert: A Large Chest Radiograph Dataset"
-- **Grad-CAM**: Selvaraju et al. (2017) - "Grad-CAM: Visual Explanations from Deep Networks"
-
 ### Special Thanks
 - University of Ioannina for hosting the hackathon
 - Open-source community for incredible tools and resources
-
----
-
-## ⚖️ License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
