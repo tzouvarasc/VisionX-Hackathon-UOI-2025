@@ -129,7 +129,7 @@ VisionX uses a four-tier risk stratification system based on clinical urgency:
 
 ---
 
-## 🏗️ Technical Architecture
+## Technical Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
