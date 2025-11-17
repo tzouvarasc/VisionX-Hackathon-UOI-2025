@@ -28,13 +28,8 @@
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
   - [Running the Application](#running-the-application)
-- [Usage Guide](#-usage-guide)
-  - [Single Image Analysis](#single-image-analysis)
-  - [Batch Risk Classification](#batch-risk-classification)
 - [API Documentation](#-api-documentation)
 - [Risk Classification System](#-risk-classification-system)
-- [Model Details](#-model-details)
-- [Contributing](#-contributing)
 - [Acknowledgments](#-acknowledgments)
 - [License](#-license)
 
@@ -80,24 +75,21 @@ In modern healthcare facilities, radiologists face an overwhelming volume of che
 3. **Organizes cases by risk level** to optimize workflow
 4. **Provides visual explanations** to support diagnostic decisions
 
-> ⚠️ **Important:** VisionX is designed as a **pre-diagnostic screening tool** and **educational platform**. It is NOT intended to replace professional medical judgment or be used for clinical decision-making without physician oversight.
-
 ---
 
 ## ✨ Key Features
 
 ### 🔬 Advanced AI Analysis
 
-- **Multi-Label Classification**: Simultaneous detection of 18+ chest pathologies
+- **Multi-Label Classification**: Simultaneous detection of 12 chest pathologies
 - **DenseNet121 Architecture**: Pretrained on CheXpert dataset (224K+ chest X-rays)
-- **High Performance**: 90%+ accuracy on validation datasets
+- **High Performance**: 85%+ accuracy on validation datasets
 - **Real-time Processing**: Results in under 3 seconds per image
 
 ### 👁️ Visual Explainability
 
 - **Grad-CAM Heatmaps**: Visualize which regions influenced the model's prediction
 - **Overlay & Standalone Views**: Compare original X-ray with AI attention maps
-- **Multi-Layer Analysis**: Target specific pathologies for focused visualization
 
 ### 🎨 Dual Operating Modes
 
@@ -119,13 +111,6 @@ In modern healthcare facilities, radiologists face an overwhelming volume of che
 - **Context-Aware Analysis**: Considers probability distributions and multi-label predictions
 - **Educational Content**: Explains pathology significance and common causes
 - **Safety-First Design**: Emphasizes limitations and need for professional evaluation
-
-### 🌐 Modern Web Interface
-
-- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile
-- **Drag-and-Drop Upload**: Intuitive file handling
-- **Real-Time Feedback**: Progress indicators and status updates
-- **Medical-Grade UI**: Clean, professional interface designed for clinical environments
 
 ---
 
@@ -162,9 +147,9 @@ In modern healthcare facilities, radiologists face an overwhelming volume of che
 │                    │                                       │
 │  ┌─────────────────▼────────────────────────────────────┐ │
 │  │           DenseNet121 Model (TorchXRayVision)        │ │
-│  │  • 18 Pathology Classes                              │ │
+│  │  • 12 Pathology Classes                              │ │
 │  │  • Sigmoid Output (Multi-label)                      │ │
-│  │  • CUDA/CPU Support                                  │ │
+│  │  					                                  │ │
 │  └─────────────────┬────────────────────────────────────┘ │
 │                    │                                       │
 │  ┌─────────────────▼────────────────────────────────────┐ │
@@ -349,66 +334,6 @@ Open your browser and navigate to:
 - **Frontend UI**: http://localhost:3000
 - **API Docs**: http://localhost:8000/docs (FastAPI Swagger UI)
 - **Health Check**: http://localhost:8000/
-
----
-
-## 📖 Usage Guide
-
-### Single Image Analysis
-
-Perfect for detailed examination of individual chest X-rays.
-
-1. **Select Mode**
-   - Choose "Single Image Analysis" from the mode selector
-
-2. **Upload Image**
-   - Click "Select Image" or drag-and-drop a chest X-ray (JPG, PNG)
-   - Supported formats: JPEG, PNG, BMP, TIFF
-   - Recommended: Frontal chest X-rays
-
-3. **Run Prediction**
-   - Click the "Predict" button
-   - Processing takes 2-5 seconds depending on hardware
-
-4. **Review Results**
-   - **Top Prediction**: Primary pathology detected
-   - **Clinical Risk Level**: Automatic risk classification
-   - **Grad-CAM Visualization**: Heatmap showing AI attention
-   - **Probability Confidence**: Model certainty score
-
-5. **Get AI Explanation** (Optional)
-   - Click "Generate AI Explanation"
-   - View detailed clinical interpretation
-   - Review limitations and disclaimers
-
-### Batch Risk Classification
-
-Ideal for screening large volumes of X-rays and prioritizing urgent cases.
-
-1. **Select Mode**
-   - Choose "Batch Risk Classification" from the mode selector
-
-2. **Upload Multiple Images**
-   - Click "Select Images" and choose multiple files
-   - Or drag-and-drop an entire folder
-   - Supports 10-100+ images simultaneously
-
-3. **Run Batch Processing**
-   - Click "Predict" to analyze all images
-   - Progress bar shows real-time status
-
-4. **Review Summary**
-   - **Risk Distribution**: Visual breakdown by category
-   - **High Risk**: 🔴 Images requiring immediate attention
-   - **Medium Risk**: 🟡 Cases needing follow-up
-   - **Low Risk**: 🟢 Structural issues with standard care
-   - **No Finding**: ✅ Normal/healthy X-rays
-
-5. **Access Organized Files**
-   - Images automatically saved to `backend/classified_images/`
-   - Subfolders: `High/`, `Medium/`, `Low/`, `No Finding/`
-   - Filenames preserved with sequential prefixes
-
 
 ---
 
