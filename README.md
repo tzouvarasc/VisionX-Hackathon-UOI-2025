@@ -35,6 +35,9 @@
 
 ### Demo Video
 
+https://github.com/user-attachments/assets/47831627-daee-479a-b333-e780ade2f9df
+
+
 ---
 
 ## 🎯 Project Vision
