@@ -22,13 +22,13 @@
 - [Media Showcase](#-media-showcase)
 - [Project Vision](#-project-vision)
 - [Key Features](#-key-features)
+- [Risk Classification System](#-risk-classification-system)
 - [Technical Architecture](#-technical-architecture)
 - [Project Structure](#-project-structure)
 - [Getting Started](#-getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
   - [Running the Application](#running-the-application)
-- [API Documentation](#-api-documentation)
 - [Risk Classification System](#-risk-classification-system)
 - [Acknowledgments](#-acknowledgments)
 - [License](#-license)
@@ -111,6 +111,41 @@ In modern healthcare facilities, radiologists face an overwhelming volume of che
 - **Context-Aware Analysis**: Considers probability distributions and multi-label predictions
 - **Educational Content**: Explains pathology significance and common causes
 - **Safety-First Design**: Emphasizes limitations and need for professional evaluation
+
+---
+
+## 🚨 Risk Classification System
+
+VisionX uses a four-tier risk stratification system based on clinical urgency:
+
+### ✅ No Finding (Normal)
+**Conditions:** No significant pathology detected (all predictions < 30% confidence)
+
+---
+
+### 🟢 Low Risk
+**Conditions:**
+- Fracture
+
+---
+
+### 🟡 Medium Risk
+**Conditions:**
+- Atelectasis (lung collapse)
+- Pleural Effusion (fluid around lungs)
+- Cardiomegaly (enlarged heart)
+- Enlarged Cardiomediastinum
+- Lung Opacity
+
+---
+
+### 🔴 High Risk
+**Conditions:**
+- Consolidation (dense lung infiltrate)
+- Pneumothorax (collapsed lung)
+- Pulmonary Edema (fluid in lungs)
+- Pneumonia (lung infection)
+- Lung Lesion (mass/nodule)
 
 ---
 
@@ -334,41 +369,6 @@ Open your browser and navigate to:
 - **Frontend UI**: http://localhost:3000
 - **API Docs**: http://localhost:8000/docs (FastAPI Swagger UI)
 - **Health Check**: http://localhost:8000/
-
----
-
-## 🚨 Risk Classification System
-
-VisionX uses a four-tier risk stratification system based on clinical urgency:
-
-### ✅ No Finding (Normal)
-**Conditions:** No significant pathology detected (all predictions < 30% confidence)
-
----
-
-### 🟢 Low Risk
-**Conditions:**
-- Fracture
-
----
-
-### 🟡 Medium Risk
-**Conditions:**
-- Atelectasis (lung collapse)
-- Pleural Effusion (fluid around lungs)
-- Cardiomegaly (enlarged heart)
-- Enlarged Cardiomediastinum
-- Lung Opacity
-
----
-
-### 🔴 High Risk
-**Conditions:**
-- Consolidation (dense lung infiltrate)
-- Pneumothorax (collapsed lung)
-- Pulmonary Edema (fluid in lungs)
-- Pneumonia (lung infection)
-- Lung Lesion (mass/nodule)
 
 ---
 
